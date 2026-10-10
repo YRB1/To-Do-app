@@ -1,0 +1,23 @@
+{
+  "name": "YRB's World — Command Centre",
+  "short_name": "YRB's World",
+  "description": "Tasks, goals, businesses, trading journal and wealth tracking.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070816",
+  "theme_color": "#070816",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "shortcuts": [
+    { "name": "Tasks", "url": "./#/tasks" },
+    { "name": "Trading journal", "url": "./#/trading" },
+    { "name": "Calendar", "url": "./#/calendar" }
+  ]
+}
