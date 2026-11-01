@@ -47,6 +47,7 @@
     const k = e.key.toLowerCase();
     if (k === 'n') { e.preventDefault(); Tasks.edit(); }
     else if (k === 's') { e.preventDefault(); App.go('spaces'); }
+    else if (k === 'j') { e.preventDefault(); App.go('journal'); }
     else if (k === 'c') { e.preventDefault(); App.go('coach'); }
     else if (k === 't') { e.preventDefault(); Trading.edit(); }
     else if (k === '/') { const s = $('#taskSearch'); if (s) { e.preventDefault(); s.focus(); } }

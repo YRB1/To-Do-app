@@ -33,6 +33,7 @@ A personal operating system for building wealth: tasks, goals, businesses, a tra
 | **Coach** | End-goal progress with ETA, built-in suggestions with one-tap tasks, optional Claude coaching with your own API key |
 | **Music** | Apple Music / Spotify / YouTube player that keeps playing across pages |
 | **Wealth** | Assets and liabilities, net worth history, allocation, income streams, freedom ratio, cash runway |
+| **Journal** | Daily page: mood, energy, morning intention + top 3, evening wins/lesson/gratitude, rotating prompt, free write, streak + 12-week heatmap, search, PIN lock, weekly reflection with Claude |
 | **Habits** | Daily check-ins, streaks, 30-day consistency |
 | **Profile** | Profile photo, light/dark/black/auto mode, 12 colourways, glass strength, integrations, preferences, backup/restore |
 

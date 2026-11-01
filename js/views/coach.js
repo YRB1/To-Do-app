@@ -107,6 +107,9 @@ const Coach = {
       const left = (x.daily || []).filter(dl => !dl.days?.[t0]);
       if (left.length && h >= 9) add({ id: 'spdaily_' + x.id, to: 'space/' + x.id, area: 'Sections', priority: x.status === 'Focus' ? 'high' : 'med', icon: 'flame', title: `${left.length} daily non-negotiable${left.length > 1 ? 's' : ''} left in ${x.name}`, detail: left.map(dl => dl.text).join(' · ') });
     });
+    const je = (d.journal || []).find(e => e.date === t0);
+    if (h >= 20 && !Journal.hasContent(je)) add({ id: 'journal', to: 'journal', area: 'Mindset', priority: Journal.streak() >= 2 ? 'high' : 'low', icon: 'book', title: Journal.streak() >= 2 ? `Keep your ${Journal.streak()}-day journal streak` : 'Write tonight’s journal', detail: 'Two minutes: your wins, one lesson, and tomorrow’s top 3.' });
+    if (h >= 6 && h < 11 && !(je?.intention)) add({ id: 'journal_am', to: 'journal', area: 'Mindset', priority: 'low', icon: 'sun', title: 'Set today’s intention', detail: 'Write the one thing that makes today a win, and your top 3.' });
     d.habits.forEach(hb => { const s = Habits.streak(hb); if (s >= 3 && !hb.days[t0] && h >= 17) add({ id: 'streak_' + hb.id, to: 'habits', area: 'Habits', priority: 'high', icon: 'flame', title: `Keep your ${s}-day “${hb.name}” streak alive`, detail: 'Do it before the day ends.', go: ['Mark done', `Habits.toggle('${hb.id}')`] }); });
     const lastNw = d.nwHistory[d.nwHistory.length - 1];
     if (!lastNw || daysBetween(lastNw.date, t0) > 30) add({ id: 'nw', to: 'wealth', area: 'Wealth', icon: 'wallet', title: 'Update your net worth', detail: 'It’s been over a month. Update balances so your end goal stays accurate.', go: ['Open wealth', "App.go('wealth')"] });

@@ -311,3 +311,62 @@ a.li.click { text-decoration: none; }
 @media (max-width: 640px) { .dash-spaces { order: -1; } .clock { display: none; } }
 /* Logo: gold ladder-Y on ink, same as the app icon */
 .logo { color: #e8c27a; background: radial-gradient(circle at 18% 10%, rgba(75,59,209,.8), rgba(26,22,80,.4) 55%, transparent), #0a0c1f; box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(232,194,122,.18), 0 10px 24px -12px rgba(75,59,209,.9); }
+
+/* ── Journal ─────────────────────────────────────────────── */
+.j-page { padding: 22px 26px 26px; }
+.j-nav { display: flex; align-items: center; gap: 6px; margin-bottom: 18px; flex-wrap: wrap; }
+.j-date b { display: block; font-family: var(--display); font-size: 26px; font-weight: 750; letter-spacing: -.035em; line-height: 1.05; }
+.j-date small { color: var(--text3); font-size: 13px; }
+.j-date { padding: 0 6px; }
+.j-pick { width: auto; }
+.j-saved { font-size: 12.5px; color: var(--text3); min-width: 54px; text-align: right; }
+.j-l { display: block; font-size: 13px; font-weight: 600; color: var(--text2); margin: 14px 0 6px; }
+.j-mood { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--stroke); }
+.j-mood .j-l { margin-top: 0; }
+.j-moods { display: flex; gap: 6px; }
+.j-moods button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px; border-radius: 13px; border: 1px solid var(--stroke); background: var(--field); cursor: pointer; transition: border-color .2s, background .2s; }
+.j-moods button span { font-size: 22px; line-height: 1; filter: grayscale(.7); opacity: .7; transition: filter .2s, opacity .2s, transform .2s var(--ease); }
+.j-moods button small { font-size: 11px; color: var(--text3); }
+.j-moods button.on { border-color: color-mix(in srgb, var(--bullion) 55%, transparent); background: rgba(232,194,122,.09); }
+.j-moods button.on span { filter: none; opacity: 1; transform: scale(1.12); }
+.j-moods button.on small { color: var(--text); }
+.j-energy { display: flex; gap: 5px; align-items: flex-end; height: 58px; }
+.j-energy button { flex: 1; height: 100%; border: 0; background: none; cursor: pointer; display: flex; align-items: flex-end; padding: 0; }
+.j-energy button i { display: block; width: 100%; border-radius: 6px; background: var(--stroke-2); transition: background .2s; }
+.j-energy button:nth-child(1) i { height: 30%; } .j-energy button:nth-child(2) i { height: 47%; } .j-energy button:nth-child(3) i { height: 64%; } .j-energy button:nth-child(4) i { height: 82%; } .j-energy button:nth-child(5) i { height: 100%; }
+.j-energy button.on i { background: linear-gradient(180deg, #4ade80, #059669); }
+.j-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 26px; }
+.j-sec { padding: 18px 0 2px; }
+.j-sec + .j-sec, .j-cols + .j-sec { border-top: 1px solid var(--stroke); margin-top: 16px; }
+.j-cols .j-sec + .j-sec { border-top: 0; margin-top: 0; }
+.j-sec h3 { display: flex; gap: 8px; align-items: center; font-size: 17px; font-weight: 700; letter-spacing: -.02em; }
+.j-sec h3 .ic { color: var(--gold); }
+.j-ta { width: 100%; resize: none; border: 1px solid var(--stroke); background: var(--field); border-radius: 13px; padding: 11px 13px; font: inherit; font-size: 15px; line-height: 1.6; color: var(--text); outline: none; overflow: hidden; transition: border-color .2s; }
+.j-ta:focus { border-color: color-mix(in srgb, var(--a1) 55%, transparent); }
+.j-top3 { display: flex; flex-direction: column; gap: 6px; }
+.j-t3 { display: flex; gap: 8px; align-items: center; }
+.j-t3 span { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; font: 700 12.5px var(--display); background: var(--gold-soft); color: var(--gold); flex-shrink: 0; }
+.j-top3 .btn { align-self: flex-start; margin-top: 2px; }
+.j-prompt { font-family: var(--display); font-size: 19px; font-weight: 600; letter-spacing: -.02em; line-height: 1.35; margin: 10px 0 10px; max-width: 46ch; }
+.j-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--stroke); font-size: 13px; }
+.j-tag { border: 1px solid var(--stroke-2); background: none; color: var(--text2); border-radius: 99px; padding: 5px 11px; font-size: 12.5px; cursor: pointer; }
+.j-tag.on { background: color-mix(in srgb, var(--c) 20%, transparent); border-color: color-mix(in srgb, var(--c) 55%, transparent); color: var(--text); }
+.j-big { font-family: var(--display); font-size: 40px; font-weight: 800; letter-spacing: -.05em; color: var(--gold); line-height: 1; }
+.j-heat { display: grid; grid-template-rows: repeat(7, 1fr); grid-auto-flow: column; gap: 4px; margin-top: 16px; }
+.j-heat a, .j-heat i { aspect-ratio: 1; border-radius: 4px; background: var(--stroke); display: block; }
+.j-heat .l1 { background: color-mix(in srgb, var(--bullion) 30%, transparent); } .j-heat .l2 { background: color-mix(in srgb, var(--bullion) 60%, transparent); } .j-heat .l3 { background: var(--bullion); }
+.j-heat .fut { background: transparent; }
+.j-heat a.sel { outline: 2px solid var(--a1); outline-offset: 1px; }
+.j-heat-k { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text3); margin-top: 8px; }
+.j-heat-k span:last-child { display: flex; gap: 3px; align-items: center; }
+.j-heat-k i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; background: var(--stroke); }
+.j-heat-k i.l1 { background: color-mix(in srgb, var(--bullion) 30%, transparent); } .j-heat-k i.l2 { background: color-mix(in srgb, var(--bullion) 60%, transparent); } .j-heat-k i.l3 { background: var(--bullion); }
+.j-item { display: flex; gap: 10px; align-items: center; padding: 8px 6px; border-radius: 10px; text-decoration: none; }
+.j-item:hover { background: var(--field); }
+.j-item b { display: block; font-size: 13.5px; font-weight: 600; } .j-item small { display: block; color: var(--text3); font-size: 12.5px; }
+.j-em { width: 30px; text-align: center; font-size: 18px; }
+.j-lock { max-width: 360px; margin: 8vh auto 0; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; padding: 34px; }
+.j-lock-ic { width: 60px; height: 60px; border-radius: 18px; display: grid; place-items: center; background: var(--gold-soft); color: var(--gold); }
+.j-lock h2 { font-size: 22px; letter-spacing: -.03em; }
+.j-lock .input { text-align: center; font-size: 22px; letter-spacing: .4em; max-width: 200px; }
+@media (max-width: 900px) { .j-cols, .j-mood { grid-template-columns: 1fr; } .j-page { padding: 18px; } .journal .s8, .journal .s4 { grid-column: span 12; } }
