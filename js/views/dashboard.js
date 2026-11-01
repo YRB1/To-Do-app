@@ -164,6 +164,10 @@ const Dashboard = {
         <a href="#/goals" style="text-decoration:none;color:inherit">${kpi('Goal progress', pct(gAvg), { icon: 'target', tone: 'blue', sub: `${activeGoals.length} active goals` })}</a>
       </div>
 
+      <div class="s12 dash-spaces">
+        <div class="ds-h"><h2>${I('folder')}Sections</h2><a class="btn sm ghost" href="#/spaces">All ${I('arrowR', 14)}</a></div>
+        <div class="ds-row">${Spaces.list().filter(x => x.status !== 'Paused').map(x => { const nr = Spaces.nextRung(x), cd = Spaces.countdown(x), open = Spaces.tasks(x).filter(t => !t.done).length; return `<a class="ds-chip ${x.status === 'Focus' ? 'focus' : ''}" href="#/space/${x.id}" style="--c:${esc(x.color)}"><span class="sp-emoji">${esc(x.emoji || '•')}</span><span class="grow"><b class="ellipsis">${esc(x.name)}</b><small class="ellipsis">${nr ? esc(nr.text) : open + ' open tasks'}</small></span>${cd ? `<em class="${cd.cls}">${cd.txt}</em>` : ''}</a>`; }).join('')}</div>
+      </div>
       <div class="glass card s7">${EndGoal.card(true)}</div>
       <div class="glass card s5">
         <div class="card-h"><h2>${I('sparkles')}Coach</h2><div class="right"><a class="btn sm ghost" href="#/coach">All ${I('arrowR', 14)}</a></div></div>
@@ -184,11 +188,11 @@ const Dashboard = {
 
       <div class="glass card s4">
         <div class="card-h"><h2>${I('target')}Goals</h2><div class="right"><a class="btn sm ghost" href="#/goals">${I('arrowR', 14)}</a></div></div>
-        ${activeGoals.slice(0, 4).map(g => { const p = Goals.progress(g), pc = Goals.pace(g); return `<div class="li click" onclick="App.go('goals')">${ring(p, 42, 5, (GOAL_CATS[g.cat] || {}).ring || '')}<div class="li-b"><div class="li-t">${esc(g.title)}</div><div class="li-s">${pc ? pc.label : g.cat}</div></div><div class="li-v">${pct(p)}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No active goals. <a href="javascript:Goals.edit()">Set one</a>.</p>`}
+        ${activeGoals.slice(0, 4).map(g => { const p = Goals.progress(g), pc = Goals.pace(g); return `<div class="li click" onclick="App.go('goals/${g.id}')">${ring(p, 42, 5, (GOAL_CATS[g.cat] || {}).ring || '')}<div class="li-b"><div class="li-t">${esc(g.title)}</div><div class="li-s">${pc ? pc.label : g.cat}</div></div><div class="li-v">${pct(p)}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No active goals. <a href="javascript:Goals.edit()">Set one</a>.</p>`}
       </div>
       <div class="glass card s4">
         <div class="card-h"><h2>${I('briefcase')}Businesses</h2><div class="right"><a class="btn sm ghost" href="#/business">${I('arrowR', 14)}</a></div></div>
-        ${d.businesses.slice(0, 5).map(b => { const p = b.target ? b.revenue / b.target : 0; return `<div class="li click" onclick="App.go('business/${b.id}')">${Business.av(b, 'sm')}<div class="li-b"><div class="li-t">${esc(b.name)}</div>${bar(p, 'gold thin')}</div><div class="li-v">${money(b.revenue, { compact: true })}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No businesses yet. <a href="javascript:Business.edit()">Add one</a>.</p>`}
+        ${d.businesses.slice(0, 5).map(b => { const p = b.target ? b.revenue / b.target : 0; return `<div class="li click" onclick="App.go('${(Store.d.spaces.find(x => x.bizId === b.id) ? 'space/' + Store.d.spaces.find(x => x.bizId === b.id).id : 'business/' + b.id)}')">${Business.av(b, 'sm')}<div class="li-b"><div class="li-t">${esc(b.name)}</div>${bar(p, 'gold thin')}</div><div class="li-v">${money(b.revenue, { compact: true })}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No businesses yet. <a href="javascript:Business.edit()">Add one</a>.</p>`}
       </div>
       <div class="glass card s4">
         <div class="card-h"><h2>${I('flame')}Habits</h2><span class="sub">${d.habits.filter(h => h.days[t0]).length}/${d.habits.length}</span><div class="right"><a class="btn sm ghost" href="#/habits">${I('arrowR', 14)}</a></div></div>
