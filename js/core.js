@@ -590,7 +590,7 @@ const App = {
     const nw = Wealth.netWorth();
     const name = Store.s.name || 'Your Profile';
     $('#sidebar').innerHTML = `
-      <a class="brand" href="#/dashboard" style="text-decoration:none"><div class="logo">${I('crown', 21)}</div><div><b>YRB’s World</b><small>Command centre</small></div></a>
+      <a class="brand" href="#/dashboard" style="text-decoration:none"><div class="logo"><svg width="22" height="22" viewBox="104 96 304 330" fill="currentColor" aria-hidden="true"><path d="M118 104h78l60 104 60-104h78L292 268h-72z"/><rect x="220" y="262" width="22" height="160" rx="4"/><rect x="270" y="262" width="22" height="160" rx="4"/><rect x="220" y="300" width="72" height="16" rx="3"/><rect x="220" y="346" width="72" height="16" rx="3"/><rect x="220" y="392" width="72" height="16" rx="3"/></svg></div><div><b>YRB’s World</b><small>Command centre</small></div></a>
       <nav class="nav">${NAV.map(n => n.sec ? `<div class="nav-section">${n.sec}</div>` :
         `<a href="#/${n.id}" class="${this.cur === n.id || (n.id === 'spaces' && this.cur === 'space') ? 'active' : ''}">${I(n.icon)}<span>${n.label}</span>${counts[n.id] ? `<span class="count ${counts[n.id][1]}">${counts[n.id][0]}</span>` : ''}</a>` +
         (n.spaces ? `<div class="nav-spaces">${Store.d.spaces.filter(x => !x.archived && x.status !== 'Paused').slice(0, 7).map(x => `<a href="#/space/${x.id}" class="${this.cur === 'space' && this.params[0] === x.id ? 'active' : ''}" style="--c:${esc(x.color)}"><i class="sp-dot"></i><span>${esc(x.name)}</span></a>`).join('')}</div>` : '')).join('')}</nav>
