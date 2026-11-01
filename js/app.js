@@ -24,7 +24,12 @@
     el.innerHTML = `<b>${t}</b><small>${n.toLocaleDateString(LOCALE, { weekday: 'short', day: 'numeric', month: 'short' })}</small>`;
   };
   tickClock();
-  setInterval(() => { Focus.tick(); tickClock(); }, 1000);
+  let lastHour = new Date().getHours();
+  setInterval(() => {
+    Focus.tick(); tickClock(); DayClock.tick();
+    const h = new Date().getHours();
+    if (h !== lastHour) { lastHour = h; Quotes.off--; Quotes.next(); }
+  }, 1000);
   setInterval(checkReminders, 20000);
   checkReminders();
 
