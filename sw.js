@@ -1,10 +1,11 @@
 /* YRB’s World service worker — offline app shell. Bump VERSION on every deploy. */
-const VERSION = 'yrb-v1.2.0';
+const VERSION = 'yrb-v2.0.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/core.js', 'js/integrations.js', 'js/app.js',
   'js/views/tasks.js', 'js/views/calendar.js', 'js/views/goals.js', 'js/views/business.js',
   'js/views/trading.js', 'js/views/wealth.js', 'js/views/habits.js', 'js/views/dashboard.js', 'js/views/profile.js', 'js/views/music.js', 'js/views/coach.js',
+  'js/views/spaces.js', 'js/views/connect.js', 'js/palette.js', 'css/v2.css',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png',
   'icons/biz/clientsniper.svg', 'icons/biz/yrb-nova.png', 'icons/biz/yrb-supreme.webp',
 ];
@@ -30,8 +31,10 @@ self.addEventListener('fetch', e => {
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     const c = list.find(x => 'focus' in x);
-    return c ? c.focus() : self.clients.openWindow('./');
+    if (c) { c.postMessage({ type: 'open', url }); return c.focus().then(w => (w && 'navigate' in w ? w.navigate(url).catch(() => {}) : null)); }
+    return self.clients.openWindow(url);
   }));
 });

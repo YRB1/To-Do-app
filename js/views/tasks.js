@@ -63,7 +63,15 @@ const Tasks = {
   },
   setMode(m) { this.mode = m; Store.s.taskView = m; Store.save(); App.render(); },
   renderList() { const el = $('#taskList'); if (el) el.innerHTML = (this.mode || Store.s.taskView) === 'board' ? this.boardHTML() : this.listHTML(); },
-  after(el) { this.bindDrag(el); },
+  after(el, p = []) {
+    this.bindDrag(el);
+    // Deep link: #/tasks/<id> opens that task; #/tasks/f/<filter> applies a filter
+    if (p[0] === 'f' && p[1]) { this.f = p[1]; App.params = []; history.replaceState(null, '', '#/tasks'); App.render(); return; }
+    if (p[0] && Store.d.tasks.some(t => t.id === p[0])) {
+      const id = p[0]; history.replaceState(null, '', '#/tasks'); App.params = [];
+      setTimeout(() => { const r = $(`.task[data-id="${id}"]`); r && r.scrollIntoView({ block: 'center' }); r && r.classList.add('flash'); this.edit(id); }, 60);
+    }
+  },
 
   listHTML() {
     const list = this.shown();
@@ -129,6 +137,7 @@ const Tasks = {
       t.reminder && !t.done ? chip(fmtDT(t.reminder), t.reminderFired ? '' : 'amber', 'bell') : '',
       st ? chip(st, '', 'layers') : '',
       goal ? chip(esc(goal.title), 'gold', 'target') : '',
+      t.spaceId && Store.space(t.spaceId) && App.params[0] !== t.spaceId ? `<span class="chip"><i class="dot" style="background:${esc(Store.space(t.spaceId).color)}"></i>${esc(Store.space(t.spaceId).name)}</span>` : '',
       t.cat ? chip(esc(t.cat), '', 'tag') : '',
       t.gcalId ? chip('Google', 'blue', 'calendar') : '',
     ].join('');
@@ -249,6 +258,7 @@ const Tasks = {
         ${F({ name: 'reminder', label: 'Reminder', type: 'datetime-local', value: t.reminder ? toLocalInput(t.reminder) : '' })}
         ${F({ name: 'bizId', label: 'Business', type: 'select', value: t.bizId, options: bizOpts })}
         ${F({ name: 'goalId', label: 'Goal', type: 'select', value: t.goalId, options: goalOpts })}
+        ${F({ name: 'spaceId', label: 'Section', type: 'select', value: t.spaceId, options: [['', '— None —'], ...Store.d.spaces.map(x => [x.id, (x.emoji ? x.emoji + ' ' : '') + x.name])] })}
         ${F({ name: 'cat', label: 'Tag', value: t.cat, placeholder: 'e.g. Sales, Admin', list: 'catList' })}
         ${F({ name: 'doing', label: 'In progress', type: 'switch', value: t.doing })}
         <div class="field full"><span>Checklist</span>

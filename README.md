@@ -4,6 +4,22 @@ A personal operating system for building wealth: tasks, goals, businesses, a tra
 
 **Live:** [yrb1.github.io/To-Do-app](https://yrb1.github.io/To-Do-app/)
 
+## New in v2
+
+- **Sections** — a workspace for each area (YRB Nova + VoiceDesk, LeadSnipe, YRBSUPREME, Trading, University…). Mission, deadline countdown, ladder of rungs, daily non-negotiables, tasks, launchpad links, live GitHub activity, notes, and “Plan my next moves with Claude”.
+- **Everything is clickable** — suggestions, reminders, toasts and notifications open the exact task, goal, section or account they refer to.
+- **Claude** — chat inside the app with your data as context, and add its suggested actions as tasks in one tap. Works via the Vercel function (`api/claude.js`), an on-device key, or by opening claude.ai pre-filled.
+- **Apple Music** — full library playback through MusicKit (`api/apple-music-token.js`), plus the existing link player.
+- **GitHub, Connections hub, ⌘K command bar** and a full visual redesign.
+
+### Vercel environment variables
+
+| Variable | For |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | Claude chat and reviews through your own server |
+| `YRB_PASSCODE` | Locks `/api/claude` so only you can use it |
+| `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_MUSIC_PRIVATE_KEY` | Apple Music library (needs an Apple Developer account) |
+
 ## What's inside
 
 | Area | Highlights |

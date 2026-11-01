@@ -153,6 +153,15 @@ const ICONS = {
   compass: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
   music: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
   camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  github: '<path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.4 5.4 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65S8.93 17.38 9 18v4"/><path d="M9 18c-4.51 2-5-2-7-2"/>',
+  message: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+  send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  plug: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
+  ladder: '<path d="M7 2v20"/><path d="M17 2v20"/><path d="M7 6h10"/><path d="M7 11h10"/><path d="M7 16h10"/>',
+  skip: '<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/>',
+  back: '<polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/>',
+  command: '<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>',
   mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/>',
 };
 const I = (name, size = 18, sw = 2) => `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name] || ''}</svg>`;
@@ -174,12 +183,15 @@ const Store = {
         fxReplayUrl: 'https://app.fxreplay.com', defaultRisk: 100,
         monthlyExpenses: 2500, freedomNumber: 1000000,
         notif: false, sampleBanner: true,
-        claudeKey: '', claudeModel: 'claude-opus-5-5',
+        claudeKey: '', claudeModel: 'claude-opus-5-5', claudeMode: 'auto',
+        githubUser: 'YRB1', githubToken: '',
+        appleDevToken: '',
         music: { playlists: [], current: '', open: false },
       },
       tasks: [], goals: [], businesses: [], trades: [], backtests: [], setups: [], accounts: [],
       tjLists: JSON.parse(JSON.stringify(TJ_DEFAULTS)),
       assets: [], incomes: [], nwHistory: [], habits: [], focus: [],
+      spaces: [], chat: [],
     };
   },
   load() {
@@ -188,7 +200,9 @@ const Store = {
     this.d = raw ? this.normalize(raw) : seedData();
     const before = this.d.settings.yrbSeeded;
     ensureYrbBusinesses(this.d);
-    if (!raw || !before) this.save();
+    const hadSpaces = this.d.settings.spacesSeeded;
+    ensureSpaces(this.d);
+    if (!raw || !before || !hadSpaces) this.save();
   },
   normalize(o) {
     const d = this.defaults();
@@ -206,6 +220,7 @@ const Store = {
   replace(o) { this.d = this.normalize(o); this.save(); },
   biz(id) { return this.d.businesses.find(b => b.id === id); },
   goal(id) { return this.d.goals.find(g => g.id === id); },
+  space(id) { return this.d.spaces.find(x => x.id === id); },
 };
 
 function normTask(t) {
@@ -213,7 +228,7 @@ function normTask(t) {
     id: String(t.id ?? uid()), text: t.text || '', notes: t.notes || '',
     done: !!t.done, doing: !!t.doing && !t.done, doneAt: t.doneAt || 0,
     priority: ['low', 'med', 'high'].includes(t.priority) ? t.priority : 'low',
-    cat: t.cat || '', bizId: t.bizId || '', goalId: t.goalId || '',
+    cat: t.cat || '', bizId: t.bizId || '', goalId: t.goalId || '', spaceId: t.spaceId || '',
     due: t.due || '', time: t.time || '', repeat: t.repeat || 'none',
     reminder: t.reminder || 0, reminderFired: !!t.reminderFired,
     subtasks: Array.isArray(t.subtasks) ? t.subtasks : [],
@@ -379,14 +394,15 @@ const Theme = {
 // ── UI kit ────────────────────────────────────────────────────────────────
 const UI = {
   stack: [],
-  toast(msg, type = '') {
+  toast(msg, type = '', href = '') {
     const host = $('#toasts'); if (!host) return;
     const el = document.createElement('div');
-    el.className = 'toast ' + type;
-    el.innerHTML = msg;
+    el.className = 'toast ' + type + (href ? ' click' : '');
+    el.innerHTML = msg + (href ? `<span class="t-go">Open ${I('chevR', 14)}</span>` : '');
+    if (href) { el.setAttribute('role', 'link'); el.onclick = () => { App.go(href); el.classList.remove('show'); }; }
     host.appendChild(el);
     requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
-    setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 350); }, type === 'error' || type === 'warn' ? 4200 : 2600);
+    setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 350); }, href ? 8000 : type === 'error' || type === 'warn' ? 4200 : 2600);
   },
   modal({ title, body, footer = [], wide = false, small = false, onOpen, onClose }) {
     const wrap = document.createElement('div');
@@ -522,21 +538,24 @@ const Chart = {
 
 // ── Router / shell ────────────────────────────────────────────────────────
 const NAV = [
-  { sec: 'Command' },
-  { id: 'dashboard', label: 'Dashboard', icon: 'home' },
+  { sec: 'Today' },
+  { id: 'dashboard', label: 'Home', icon: 'home' },
   { id: 'tasks', label: 'Tasks', icon: 'tasks' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
-  { id: 'music', label: 'Music', icon: 'music' },
-  { sec: 'Growth' },
+  { id: 'spaces', label: 'Sections', icon: 'folder', spaces: true },
+  { sec: 'Build' },
   { id: 'goals', label: 'Goals', icon: 'target' },
   { id: 'business', label: 'Businesses', icon: 'briefcase' },
   { id: 'habits', label: 'Habits', icon: 'flame' },
-  { id: 'coach', label: 'Coach', icon: 'sparkles' },
+  { id: 'coach', label: 'Claude & coach', icon: 'sparkles' },
   { sec: 'Money' },
-  { id: 'trading', label: 'Trading Journal', icon: 'candles' },
+  { id: 'trading', label: 'Trading journal', icon: 'candles' },
   { id: 'wealth', label: 'Wealth', icon: 'wallet' },
+  { sec: 'Plug-ins' },
+  { id: 'music', label: 'Music', icon: 'music' },
+  { id: 'connect', label: 'Connections', icon: 'plug' },
 ];
-const TABS = [['dashboard', 'Home', 'home'], ['tasks', 'Tasks', 'tasks'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['more', 'More', 'grid']];
+const TABS = [['dashboard', 'Home', 'home'], ['tasks', 'Tasks', 'tasks'], ['spaces', 'Sections', 'folder'], ['coach', 'Claude', 'sparkles'], ['more', 'More', 'grid']];
 
 const App = {
   views: {}, cur: 'dashboard', params: [],
@@ -571,15 +590,16 @@ const App = {
     const nw = Wealth.netWorth();
     const name = Store.s.name || 'Your Profile';
     $('#sidebar').innerHTML = `
-      <a class="brand" href="#/dashboard" style="text-decoration:none"><div class="logo">${I('crown', 21)}</div><div><b>YRB’s World</b><small>COMMAND CENTRE</small></div></a>
+      <a class="brand" href="#/dashboard" style="text-decoration:none"><div class="logo">${I('crown', 21)}</div><div><b>YRB’s World</b><small>Command centre</small></div></a>
       <nav class="nav">${NAV.map(n => n.sec ? `<div class="nav-section">${n.sec}</div>` :
-        `<a href="#/${n.id}" class="${this.cur === n.id ? 'active' : ''}">${I(n.icon)}<span>${n.label}</span>${counts[n.id] ? `<span class="count ${counts[n.id][1]}">${counts[n.id][0]}</span>` : ''}</a>`).join('')}</nav>
+        `<a href="#/${n.id}" class="${this.cur === n.id || (n.id === 'spaces' && this.cur === 'space') ? 'active' : ''}">${I(n.icon)}<span>${n.label}</span>${counts[n.id] ? `<span class="count ${counts[n.id][1]}">${counts[n.id][0]}</span>` : ''}</a>` +
+        (n.spaces ? `<div class="nav-spaces">${Store.d.spaces.filter(x => !x.archived && x.status !== 'Paused').slice(0, 7).map(x => `<a href="#/space/${x.id}" class="${this.cur === 'space' && this.params[0] === x.id ? 'active' : ''}" style="--c:${esc(x.color)}"><i class="sp-dot"></i><span>${esc(x.name)}</span></a>`).join('')}</div>` : '')).join('')}</nav>
       <div class="sidebar-foot">
         <a class="me side-link ${this.cur === 'profile' ? 'active' : ''}" href="#/profile">${Profile.avatar()}<div class="grow"><b class="ellipsis">${esc(name)}</b><small>Net worth ${money(nw, { compact: true })}</small></div>${I('settings', 16)}</a>
       </div>`;
-    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'coach'];
+    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect'];
     $('#tabbar').innerHTML = TABS.map(([id, label, icon]) => {
-      const active = id === 'more' ? moreIds.includes(this.cur) : this.cur === id;
+      const active = id === 'more' ? moreIds.includes(this.cur) : this.cur === id || (id === 'spaces' && this.cur === 'space');
       return id === 'more'
         ? `<a href="javascript:void 0" onclick="App.more()" class="${active ? 'active' : ''}">${I(icon, 22)}<span>${label}</span></a>`
         : `<a href="#/${id}" class="${active ? 'active' : ''}">${I(icon, 22)}<span>${label}</span></a>`;
@@ -587,7 +607,7 @@ const App = {
     Theme.apply();
   },
   more() {
-    const tiles = [['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['coach', 'Coach', 'sparkles'], ['profile', 'Profile', 'user']];
+    const tiles = [['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
     UI.modal({
       title: 'More', body: `<div class="tiles">${tiles.map(([id, l, ic]) => `<a class="tile" href="#/${id}">${I(ic, 24)}${l}</a>`).join('')}</div>
         <div class="row mt"><button class="btn block" onclick="Theme.toggle()">${I(Theme.resolved() === 'dark' ? 'sun' : 'moon', 16)}Switch to ${Theme.resolved() === 'dark' ? 'light' : 'dark'} mode</button></div>`,
@@ -599,7 +619,7 @@ const QuickAdd = {
   open() {
     const items = [
       ['Task', 'tasks', 'Tasks.edit()'], ['Trade', 'candles', 'Trading.edit()'], ['Goal', 'target', 'Goals.edit()'],
-      ['Business', 'briefcase', 'Business.edit()'], ['Habit', 'flame', 'Habits.edit()'], ['Asset', 'wallet', 'Wealth.editAsset()'],
+      ['Section', 'folder', 'Spaces.edit()'], ['Business', 'briefcase', 'Business.edit()'], ['Habit', 'flame', 'Habits.edit()'], ['Asset', 'wallet', 'Wealth.editAsset()'], ['Ask Claude', 'sparkles', "App.go('coach')"],
     ];
     UI.modal({
       title: 'Quick add', small: true,

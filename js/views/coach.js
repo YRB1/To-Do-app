@@ -69,44 +69,51 @@ const Coach = {
   insights() {
     const d = Store.d, t0 = today(), out = [];
     const add = (o) => out.push({ priority: 'med', ...o });
+    const bizTo = b => { const sp = d.spaces.find(x => x.bizId === b.id); return sp ? 'space/' + sp.id : 'business/' + b.id; };
     const overdue = d.tasks.filter(t => !t.done && t.due && t.due < t0);
-    if (overdue.length) add({ id: 'overdue', area: 'Tasks', priority: 'high', icon: 'flag', title: `Clear ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}`, detail: `Oldest: “${overdue.sort((a, b) => a.due.localeCompare(b.due))[0].text}”. Do it, reschedule it, or delete it — overdue lists kill momentum.`, go: ['Open overdue', "Tasks.f='overdue';App.go('tasks')"] });
+    if (overdue.length) add({ id: 'overdue', area: 'Tasks', priority: 'high', icon: 'flag', title: `Clear ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}`, detail: `Oldest: “${overdue.sort((a, b) => a.due.localeCompare(b.due))[0].text}”. Do it, reschedule it, or delete it — overdue lists kill momentum.`, to: 'tasks/f/overdue', go: ['Open overdue', "App.go('tasks/f/overdue')"] });
     const eg = Store.s.endGoal;
-    if (!eg) add({ id: 'endgoal', area: 'Goals', priority: 'high', icon: 'crown', title: 'Set your end goal', detail: 'Pick the one number everything builds towards so the app can show how close you are.', go: ['Set end goal', 'EndGoal.edit()'] });
-    d.goals.filter(g => Goals.pace(g)?.cls === 'red').slice(0, 2).forEach(g => add({ id: 'behind_' + g.id, area: 'Goals', priority: 'high', icon: 'target', title: `“${g.title}” is behind pace`, detail: `${Goals.pace(g).label}. ${pct(Goals.progress(g))} done. Block time for it this week.`, task: { text: `Push forward: ${g.title}`, goalId: g.id, bizId: g.bizId, priority: 'high', due: t0 } }));
-    d.goals.filter(g => Goals.progress(g) < 1 && !d.tasks.some(t => t.goalId === g.id && !t.done)).slice(0, 2).forEach(g => add({ id: 'nostep_' + g.id, area: 'Goals', icon: 'target', title: `No next step for “${g.title}”`, detail: 'A goal without a scheduled next action is just a wish. Add one.', task: { text: `Next step: ${g.title}`, goalId: g.id, bizId: g.bizId, due: addDays(t0, 1) } }));
+    if (!eg) add({ id: 'endgoal', area: 'Goals', priority: 'high', icon: 'crown', to: 'coach', title: 'Set your end goal', detail: 'Pick the one number everything builds towards so the app can show how close you are.', go: ['Set end goal', 'EndGoal.edit()'] });
+    d.goals.filter(g => Goals.pace(g)?.cls === 'red').slice(0, 2).forEach(g => add({ id: 'behind_' + g.id, to: 'goals/' + g.id, area: 'Goals', priority: 'high', icon: 'target', title: `“${g.title}” is behind pace`, detail: `${Goals.pace(g).label}. ${pct(Goals.progress(g))} done. Block time for it this week.`, task: { text: `Push forward: ${g.title}`, goalId: g.id, bizId: g.bizId, priority: 'high', due: t0 } }));
+    d.goals.filter(g => Goals.progress(g) < 1 && !d.tasks.some(t => t.goalId === g.id && !t.done)).slice(0, 2).forEach(g => add({ id: 'nostep_' + g.id, to: 'goals/' + g.id, area: 'Goals', icon: 'target', title: `No next step for “${g.title}”`, detail: 'A goal without a scheduled next action is just a wish. Add one.', task: { text: `Next step: ${g.title}`, goalId: g.id, bizId: g.bizId, due: addDays(t0, 1) } }));
     d.businesses.forEach(b => {
       if (b.status === 'Paused') return;
-      if (!d.tasks.some(t => t.bizId === b.id && !t.done)) add({ id: 'biznotasks_' + b.id, area: 'Business', icon: 'briefcase', title: `${b.name} has no open tasks`, detail: 'Plan the next three moves that bring in revenue.', task: { text: `Plan next 3 revenue moves for ${b.name}`, bizId: b.id, priority: 'high', due: t0 } });
-      if (!+b.revenue && b.status !== 'Idea') add({ id: 'bizrev_' + b.id, area: 'Business', priority: 'high', icon: 'coins', title: `Get ${b.name} its first revenue`, detail: 'Fastest path is direct outreach. Make a list and start today.', task: { text: `Reach out to 10 prospects for ${b.name}`, bizId: b.id, priority: 'high', due: t0 } });
-      if (!b.url) add({ id: 'bizurl_' + b.id, area: 'Business', priority: 'low', icon: 'globe', title: `Add ${b.name}’s website`, detail: 'Its logo will appear automatically once the site is linked.', go: ['Edit', `Business.edit('${b.id}')`] });
-      if (b.status === 'Testing') add({ id: 'biztest_' + b.id, area: 'Business', priority: 'low', icon: 'zap', title: `Decide on ${b.name}`, detail: 'Set a kill-or-commit date and the number it must hit by then.', task: { text: `Kill-or-commit review: ${b.name}`, bizId: b.id, due: addDays(t0, 14) } });
+      if (!d.tasks.some(t => t.bizId === b.id && !t.done)) add({ id: 'biznotasks_' + b.id, to: bizTo(b), area: 'Business', icon: 'briefcase', title: `${b.name} has no open tasks`, detail: 'Plan the next three moves that bring in revenue.', task: { text: `Plan next 3 revenue moves for ${b.name}`, bizId: b.id, priority: 'high', due: t0 } });
+      if (!+b.revenue && b.status !== 'Idea') add({ id: 'bizrev_' + b.id, to: bizTo(b), area: 'Business', priority: 'high', icon: 'coins', title: `Get ${b.name} its first revenue`, detail: 'Fastest path is direct outreach. Make a list and start today.', task: { text: `Reach out to 10 prospects for ${b.name}`, bizId: b.id, priority: 'high', due: t0 } });
+      if (!b.url) add({ id: 'bizurl_' + b.id, to: 'business/' + b.id, area: 'Business', priority: 'low', icon: 'globe', title: `Add ${b.name}’s website`, detail: 'Its logo will appear automatically once the site is linked.', go: ['Edit', `Business.edit('${b.id}')`] });
+      if (b.status === 'Testing') add({ id: 'biztest_' + b.id, to: bizTo(b), area: 'Business', priority: 'low', icon: 'zap', title: `Decide on ${b.name}`, detail: 'Set a kill-or-commit date and the number it must hit by then.', task: { text: `Kill-or-commit review: ${b.name}`, bizId: b.id, due: addDays(t0, 14) } });
     });
     const recent = d.trades.filter(t => t.account !== 'backtest' && t.date.slice(0, 10) >= addDays(t0, -30));
     if (recent.length >= 5) {
       const s = tStats(recent);
       const mist = groupStats(recent.filter(t => tMistakes(t).length), tMistakes).sort((a, b) => a.s.net - b.s.net)[0];
-      if (mist && mist.s.net < 0) add({ id: 'mistake_' + mist.label, area: 'Trading', priority: 'high', icon: 'flag', title: `“${mist.label}” cost you ${money(-mist.s.net)} this month`, detail: `${mist.s.n} trades. Write one hard rule that makes this mistake impossible.`, task: { text: `Write a rule to stop “${mist.label}”`, priority: 'high', due: t0 } });
-      if (s.rules != null && s.rules < .8) add({ id: 'rules', area: 'Trading', priority: 'high', icon: 'shield', title: `Rules followed on only ${pct(s.rules)} of trades`, detail: 'Before every entry, read your strategy checklist out loud. No checklist, no trade.' });
+      if (mist && mist.s.net < 0) add({ id: 'mistake_' + mist.label, to: 'trading/journal', area: 'Trading', priority: 'high', icon: 'flag', title: `“${mist.label}” cost you ${money(-mist.s.net)} this month`, detail: `${mist.s.n} trades. Write one hard rule that makes this mistake impossible.`, task: { text: `Write a rule to stop “${mist.label}”`, priority: 'high', due: t0 } });
+      if (s.rules != null && s.rules < .8) add({ id: 'rules', to: 'trading/playbook', area: 'Trading', priority: 'high', icon: 'shield', title: `Rules followed on only ${pct(s.rules)} of trades`, detail: 'Before every entry, read your strategy checklist out loud. No checklist, no trade.' });
       const sess = groupStats(recent, 'session').filter(g => g.s.n >= 3).sort((a, b) => a.s.net - b.s.net)[0];
-      if (sess && sess.s.net < 0) add({ id: 'session_' + sess.label, area: 'Trading', icon: 'clock', title: `${sess.label} session is losing (${money(sess.s.net, { sign: true })})`, detail: `${sess.s.n} trades, ${pct(sess.s.wr)} win rate. Consider sitting it out or halving size there.` });
+      if (sess && sess.s.net < 0) add({ id: 'session_' + sess.label, to: 'trading', area: 'Trading', icon: 'clock', title: `${sess.label} session is losing (${money(sess.s.net, { sign: true })})`, detail: `${sess.s.n} trades, ${pct(sess.s.wr)} win rate. Consider sitting it out or halving size there.` });
       const best = groupStats(recent, 'setup').filter(g => g.s.n >= 3 && g.label !== '—').sort((a, b) => b.s.net - a.s.net)[0];
-      if (best && best.s.net > 0) add({ id: 'best_' + best.label, area: 'Trading', priority: 'low', icon: 'star', title: `${best.label} is your edge right now`, detail: `${money(best.s.net, { sign: true })} over ${best.s.n} trades. Focus on A+ versions of it.` });
+      if (best && best.s.net > 0) add({ id: 'best_' + best.label, to: 'trading/playbook', area: 'Trading', priority: 'low', icon: 'star', title: `${best.label} is your edge right now`, detail: `${money(best.s.net, { sign: true })} over ${best.s.n} trades. Focus on A+ versions of it.` });
     }
     d.accounts.filter(a => a.status === 'Active').forEach(a => {
       const st = acctStats(a);
-      if (st.ddLimit && st.ddWorst / st.ddLimit > .6) add({ id: 'dd_' + a.id, area: 'Trading', priority: 'high', icon: 'down', title: `${a.name}: ${pct(st.ddWorst / st.ddLimit)} of max drawdown used`, detail: `Only ${money(st.ddLimit - st.ddWorst)} left. Cut risk per trade until you’re back above water.` });
-      if (st.dailyLimit && -st.day / st.dailyLimit > .5) add({ id: 'daily_' + a.id, area: 'Trading', priority: 'high', icon: 'x', title: `Stop trading ${a.name} today`, detail: `You’ve used ${pct(-st.day / st.dailyLimit)} of the daily loss limit.` });
-      if (st.hit && a.type === 'prop' && a.phase !== 'Funded') add({ id: 'hit_' + a.id, area: 'Trading', priority: 'high', icon: 'crown', title: `${a.name} hit its profit target 🎯`, detail: 'Stop trading it and move to the next phase.', task: { text: `Request next phase for ${a.name}`, priority: 'high', due: t0 } });
+      if (st.ddLimit && st.ddWorst / st.ddLimit > .6) add({ id: 'dd_' + a.id, to: 'trading/accounts', area: 'Trading', priority: 'high', icon: 'down', title: `${a.name}: ${pct(st.ddWorst / st.ddLimit)} of max drawdown used`, detail: `Only ${money(st.ddLimit - st.ddWorst)} left. Cut risk per trade until you’re back above water.` });
+      if (st.dailyLimit && -st.day / st.dailyLimit > .5) add({ id: 'daily_' + a.id, to: 'trading/accounts', area: 'Trading', priority: 'high', icon: 'x', title: `Stop trading ${a.name} today`, detail: `You’ve used ${pct(-st.day / st.dailyLimit)} of the daily loss limit.` });
+      if (st.hit && a.type === 'prop' && a.phase !== 'Funded') add({ id: 'hit_' + a.id, to: 'trading/accounts', area: 'Trading', priority: 'high', icon: 'crown', title: `${a.name} hit its profit target 🎯`, detail: 'Stop trading it and move to the next phase.', task: { text: `Request next phase for ${a.name}`, priority: 'high', due: t0 } });
     });
     const h = new Date().getHours();
-    d.habits.forEach(hb => { const s = Habits.streak(hb); if (s >= 3 && !hb.days[t0] && h >= 17) add({ id: 'streak_' + hb.id, area: 'Habits', priority: 'high', icon: 'flame', title: `Keep your ${s}-day “${hb.name}” streak alive`, detail: 'Do it before the day ends.', go: ['Mark done', `Habits.toggle('${hb.id}')`] }); });
+    d.spaces.filter(x => !x.archived && x.status !== 'Paused').forEach(x => {
+      const cd = Spaces.countdown(x), nr = Spaces.nextRung(x);
+      if (cd && cd.n >= 0 && cd.n <= 10 && nr) add({ id: 'spdl_' + x.id, to: 'space/' + x.id, area: 'Sections', priority: cd.n <= 3 ? 'high' : 'med', icon: 'clock', title: `${x.name}: ${cd.txt} to “${x.deadlineLabel || 'deadline'}”`, detail: `Next rung: ${nr.text}. Open the section and lock in today’s move.` });
+      const left = (x.daily || []).filter(dl => !dl.days?.[t0]);
+      if (left.length && h >= 9) add({ id: 'spdaily_' + x.id, to: 'space/' + x.id, area: 'Sections', priority: x.status === 'Focus' ? 'high' : 'med', icon: 'flame', title: `${left.length} daily non-negotiable${left.length > 1 ? 's' : ''} left in ${x.name}`, detail: left.map(dl => dl.text).join(' · ') });
+    });
+    d.habits.forEach(hb => { const s = Habits.streak(hb); if (s >= 3 && !hb.days[t0] && h >= 17) add({ id: 'streak_' + hb.id, to: 'habits', area: 'Habits', priority: 'high', icon: 'flame', title: `Keep your ${s}-day “${hb.name}” streak alive`, detail: 'Do it before the day ends.', go: ['Mark done', `Habits.toggle('${hb.id}')`] }); });
     const lastNw = d.nwHistory[d.nwHistory.length - 1];
-    if (!lastNw || daysBetween(lastNw.date, t0) > 30) add({ id: 'nw', area: 'Wealth', icon: 'wallet', title: 'Update your net worth', detail: 'It’s been over a month. Update balances so your end goal stays accurate.', go: ['Open wealth', "App.go('wealth')"] });
-    if (Store.s.monthlyExpenses) { const cash = sum(d.assets.filter(a => a.kind !== 'liability' && a.cat === 'Cash'), a => a.value); if (cash / Store.s.monthlyExpenses < 3) add({ id: 'runway', area: 'Wealth', priority: 'high', icon: 'clock', title: `Cash runway under 3 months`, detail: `${money(cash)} cash vs ${money(Store.s.monthlyExpenses)}/month. Build a buffer before taking bigger risks.` }); }
-    if (!Focus.todayMin() && h >= 10 && h < 20) add({ id: 'focus', area: 'Mindset', priority: 'low', icon: 'zap', title: 'No deep work yet today', detail: 'One 25-minute block on your most important task changes the day.', go: ['Start focus', "App.go('dashboard');setTimeout(()=>Focus.toggle(),300)"] });
+    if (!lastNw || daysBetween(lastNw.date, t0) > 30) add({ id: 'nw', to: 'wealth', area: 'Wealth', icon: 'wallet', title: 'Update your net worth', detail: 'It’s been over a month. Update balances so your end goal stays accurate.', go: ['Open wealth', "App.go('wealth')"] });
+    if (Store.s.monthlyExpenses) { const cash = sum(d.assets.filter(a => a.kind !== 'liability' && a.cat === 'Cash'), a => a.value); if (cash / Store.s.monthlyExpenses < 3) add({ id: 'runway', to: 'wealth', area: 'Wealth', priority: 'high', icon: 'clock', title: `Cash runway under 3 months`, detail: `${money(cash)} cash vs ${money(Store.s.monthlyExpenses)}/month. Build a buffer before taking bigger risks.` }); }
+    if (!Focus.todayMin() && h >= 10 && h < 20) add({ id: 'focus', to: 'dashboard', area: 'Mindset', priority: 'low', icon: 'zap', title: 'No deep work yet today', detail: 'One 25-minute block on your most important task changes the day.', go: ['Start focus', "App.go('dashboard');setTimeout(()=>Focus.toggle(),300)"] });
     const lb = +localStorage.getItem('empire_lastBackup');
-    if (!lb || Date.now() - lb > 14 * 864e5) add({ id: 'backup', area: 'Mindset', priority: 'low', icon: 'download', title: 'Back up your data', detail: 'Your data lives on this device. Download a backup every couple of weeks.', go: ['Back up now', 'Backup.export();App.render()'] });
+    if (!lb || Date.now() - lb > 14 * 864e5) add({ id: 'backup', to: 'profile/data', area: 'Mindset', priority: 'low', icon: 'download', title: 'Back up your data', detail: 'Your data lives on this device. Download a backup every couple of weeks.', go: ['Back up now', 'Backup.export();App.render()'] });
     const dis = Store.s.dismissed || {};
     const rank = { high: 0, med: 1, low: 2 };
     return out.filter(s => dis[s.id] !== t0).sort((a, b) => rank[a.priority] - rank[b.priority]);
@@ -122,7 +129,8 @@ const Coach = {
     (this._tasks ||= {})[key] = s.task;
     (this._go ||= {})[key] = s.go?.[1];
     (this._ids ||= {})[key] = s.id;
-    return `<div class="sug ${s.priority === 'high' ? 'high' : ''}">
+    (this._to ||= {})[key] = s.to || '';
+    return `<div class="sug ${s.priority === 'high' ? 'high' : ''} ${s.to ? 'click' : ''}" ${s.to ? `role="link" tabindex="0" onclick="if(!event.target.closest('button,a'))App.go(Coach._to['${key}'])" onkeydown="if(event.key==='Enter'&&event.target===this)App.go(Coach._to['${key}'])"` : ''}>
       <div class="s-ic">${I(s.icon || { Tasks: 'tasks', Goals: 'target', Business: 'briefcase', Trading: 'candles', Wealth: 'wallet', Habits: 'flame' }[s.area] || 'sparkles', 17)}</div>
       <div class="grow"><div class="row wrap" style="gap:6px;margin-bottom:3px">${tag(s.area)}${s.priority === 'high' ? tag('Priority') : ''}</div>
         <b>${esc(s.title)}</b>${s.detail ? `<p>${esc(s.detail)}</p>` : ''}
@@ -130,7 +138,7 @@ const Coach = {
           ${s.task?.text ? `<button class="btn xs primary" onclick="Coach.addTask(Coach._tasks['${key}'])">${I('plus', 12)}Add task: ${esc(s.task.text.length > 42 ? s.task.text.slice(0, 40) + '…' : s.task.text)}</button>` : ''}
           ${s.go ? `<button class="btn xs" onclick="(new Function(Coach._go['${key}']))()">${esc(s.go[0])}</button>` : ''}
           ${src === 'rule' ? `<button class="btn xs ghost" onclick="Coach.dismiss(Coach._ids['${key}'])">Not today</button>` : ''}
-        </div></div></div>`;
+        </div></div>${s.to ? `<span class="s-go">${I('chevR', 16)}</span>` : ''}</div>`;
   },
 
   // ── Claude coaching (calls the Claude API directly with the user's key) ─
@@ -178,62 +186,54 @@ Return a short summary (2-4 sentences, plain text) and 4-8 suggestions. For each
   },
   loading: false,
   async ask(question = '') {
-    const key = (Store.s.claudeKey || '').trim();
-    if (!key) { UI.toast(`${I('info', 16)} Add your Claude API key in Profile → Integrations`, 'warn'); App.go('profile/integrations'); return; }
+    const prompt = `My current snapshot:\n${JSON.stringify(this.snapshot())}\n\n${question ? 'My question: ' + question : 'Review everything and tell me what to focus on next to get closer to my end goal.'}`;
+    if (Claude.mode() === 'link') return Claude.openApp(this.SYSTEM.split('\n\nReturn')[0] + '\n\n' + prompt + '\n\nGive me a short summary and 4-8 concrete next actions.');
     if (this.loading) return;
     this.loading = true; this.lastQ = question; App.render();
     try {
-      const { default: Anthropic } = await import('https://cdn.jsdelivr.net/npm/@anthropic-ai/sdk@0.128.0/+esm');
-      this.Anthropic = Anthropic;
-      const client = new Anthropic({ apiKey: key, dangerouslyAllowBrowser: true });
-      const res = await client.beta.messages.create({
-        model: Store.s.claudeModel || 'claude-opus-5-5',
-        max_tokens: 16000,
-        betas: ['server-side-fallback-2026-07-01'],
-        fallbacks: 'default',
-        output_config: { effort: 'medium', format: { type: 'json_schema', schema: this.SCHEMA } },
+      const res = await Claude.call({
+        max_tokens: 8000,
+        output_config: { format: { type: 'json_schema', schema: this.SCHEMA } },
         system: this.SYSTEM,
-        messages: [{ role: 'user', content: `My current snapshot:\n${JSON.stringify(this.snapshot())}\n\n${question ? 'My question: ' + question : 'Review everything and tell me what to focus on next to get closer to my end goal.'}` }],
+        messages: [{ role: 'user', content: prompt }],
       });
       if (res.stop_reason === 'refusal') throw new Error('Claude declined this request. Try rephrasing your question.');
-      const text = res.content.filter(b => b.type === 'text').map(b => b.text).join('');
-      const out = JSON.parse(text);
+      const out = JSON.parse(Claude.text(res));
       Store.d.coach = { at: Date.now(), question, model: res.model, summary: out.summary, suggestions: out.suggestions };
       Store.save();
     } catch (e) {
-      const A = this.Anthropic;
-      let msg = e.message || 'Something went wrong';
-      if (A && e instanceof A.AuthenticationError) msg = 'Your Claude API key was rejected. Check it in Profile → Integrations.';
-      else if (A && e instanceof A.PermissionDeniedError) msg = 'This API key doesn’t have access to that model.';
-      else if (A && e instanceof A.RateLimitError) msg = 'Rate limited by the Claude API. Wait a minute and try again.';
-      else if (A && e instanceof A.APIConnectionError) msg = 'Couldn’t reach the Claude API. Check your connection.';
-      else if (A && e instanceof A.APIError) msg = `Claude API error ${e.status ?? ''}: ${e.message}`;
-      else if (e instanceof SyntaxError) msg = 'Claude’s reply couldn’t be read. Try again.';
-      UI.toast(`${I('info', 16)} ${esc(msg)}`, 'error');
+      UI.toast(`${I('info', 16)} ${esc(e instanceof SyntaxError ? 'Claude’s reply couldn’t be read. Try again.' : e.message || 'Something went wrong')}`, 'error');
     }
     this.loading = false;
     App.render();
+  },
+  aiTo(s) {
+    const biz = Store.d.businesses.find(b => b.name.toLowerCase() === String(s.business || '').toLowerCase());
+    if (biz) { const sp = Store.d.spaces.find(x => x.bizId === biz.id); return sp ? 'space/' + sp.id : 'business/' + biz.id; }
+    return { Tasks: 'tasks', Goals: 'goals', Business: 'business', Trading: 'trading', Wealth: 'wealth', Habits: 'habits', Mindset: 'dashboard' }[s.area] || '';
   },
   aiTask(s) {
     const biz = Store.d.businesses.find(b => b.name.toLowerCase() === String(s.business || '').toLowerCase());
     return s.task ? { text: s.task, priority: s.priority === 'med' ? 'med' : s.priority, due: addDays(today(), clamp(+s.due_in_days || 0, 0, 365)), bizId: biz?.id || '' } : null;
   },
 
-  title: 'Coach',
-  sub() { return 'How close you are, and what to do next'; },
-  actions() { return Store.s.claudeKey ? `<button class="btn primary" onclick="Coach.ask()" ${this.loading ? 'disabled' : ''}>${I('sparkles', 16)}<span class="hide-sm">Ask Claude</span></button>` : ''; },
-  render() {
-    const ins = this.insights(), ai = Store.d.coach, hasKey = !!Store.s.claudeKey;
+  title: 'Claude & coach',
+  sub() { return Claude.label(); },
+  actions() { return `<button class="btn primary" onclick="Coach.ask()" ${this.loading ? 'disabled' : ''}>${I('sparkles', 16)}<span class="hide-sm">Full review</span></button>`; },
+  after(el, p = []) { const log = $('#chatLog', el); if (log) log.scrollTop = log.scrollHeight; const had = !!Claude.srv; Claude.probe().then(() => { if (!had && App.cur === 'coach' && Claude.mode() !== 'link') App.render(); }); },
+  render(p = []) {
+    const ins = this.insights(), ai = Store.d.coach, hasKey = Claude.mode() !== 'link';
     const goals = Store.d.goals.map(g => ({ g, p: Goals.progress(g) })).sort((a, b) => b.p - a.p);
     const bizs = Store.d.businesses;
     return `<div class="dash">
+      ${Claude.chatCard(p[0] === 'chat' ? p[1] : '')}
       <div class="glass card s12">${EndGoal.card()}</div>
       <div class="glass card s7">
-        <div class="card-h"><h2>${I('sparkles')}Claude coach</h2>${ai ? `<span class="sub">${fmtDT(ai.at)}</span>` : ''}</div>
+        <div class="card-h"><h2>${I('sparkles')}Full review</h2>${ai ? `<span class="sub">${fmtDT(ai.at)}</span>` : ''}</div>
         ${hasKey ? `<div class="quick-add" style="border:1px solid var(--stroke-2);background:var(--field);margin-bottom:12px">${I('sparkles', 18)}<input id="coachQ" placeholder="Ask anything — “What should I focus on this week?”" onkeydown="if(event.key==='Enter'){event.preventDefault();Coach.ask(this.value)}" ${this.loading ? 'disabled' : ''}><button class="btn primary sm" onclick="Coach.ask($('#coachQ').value)" ${this.loading ? 'disabled' : ''}>${this.loading ? 'Thinking…' : 'Ask'}</button></div>`
-          : `<div class="banner" style="margin-bottom:12px">${I('sparkles', 18)}<div class="grow">Connect Claude for personal coaching based on all your data: tasks, businesses, trading and money. You use your own Claude API key, from platform.claude.com.</div><a class="btn sm gold" href="#/profile/integrations">Connect</a></div>`}
+          : `<div class="banner" style="margin-bottom:12px">${I('sparkles', 18)}<div class="grow">Tap <b>Full review</b> to send a snapshot of everything to the Claude app. <a href="#/connect">Connect Claude</a> to get the review here, with one-tap tasks.</div></div>`}
         ${this.loading ? `<div class="sug"><div class="s-ic">${I('sparkles', 17)}</div><div class="grow"><b>Claude is reviewing your data…</b><p>This usually takes 10–40 seconds.</p></div></div>` : ''}
-        ${ai && !this.loading ? `${ai.question ? `<p class="faint" style="font-size:12.5px;margin-bottom:6px">You asked: “${esc(ai.question)}”</p>` : ''}<p style="margin-bottom:12px;white-space:pre-wrap">${esc(ai.summary)}</p>${(ai.suggestions || []).map((s, i) => this.sugHTML({ ...s, task: this.aiTask(s) }, i, 'ai')).join('')}` : ''}
+        ${ai && !this.loading ? `${ai.question ? `<p class="faint" style="font-size:12.5px;margin-bottom:6px">You asked: “${esc(ai.question)}”</p>` : ''}<p style="margin-bottom:12px;white-space:pre-wrap">${esc(ai.summary)}</p>${(ai.suggestions || []).map((s, i) => this.sugHTML({ ...s, task: this.aiTask(s), to: this.aiTo(s) }, i, 'ai')).join('')}` : ''}
         ${!ai && hasKey && !this.loading ? `<p class="faint" style="font-size:13px">Tap <b>Ask Claude</b> for a full review, or ask a specific question above.</p>` : ''}
       </div>
       <div class="glass card s5">

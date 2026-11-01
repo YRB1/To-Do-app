@@ -20,13 +20,15 @@ const Notify = {
     App.render();
     return p === 'granted';
   },
-  async show(title, body) {
+  async show(title, body, route = '') {
     if (!this.supported() || Notification.permission !== 'granted') return;
+    const url = './' + (route ? '#/' + route : '');
+    const plain = () => { const n = new Notification(title, { body }); if (route) n.onclick = () => { window.focus(); App.go(route); n.close(); }; };
     try {
       const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration() : null;
-      if (reg) return reg.showNotification(title, { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png' });
-      new Notification(title, { body });
-    } catch { try { new Notification(title, { body }); } catch {} }
+      if (reg) return reg.showNotification(title, { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url }, tag: route || undefined });
+      plain();
+    } catch { try { plain(); } catch {} }
   },
 };
 
@@ -36,8 +38,8 @@ function checkReminders() {
   for (const t of Store.d.tasks) {
     if (t.reminder && !t.done && !t.reminderFired && t.reminder <= now) {
       t.reminderFired = true; changed = true;
-      Notify.show('⏰ ' + t.text, t.due ? 'Due ' + relDate(t.due) + (t.time ? ' at ' + fmtTime(t.time) : '') : 'Reminder');
-      UI.toast(`${I('bell', 16)} ${esc(t.text)}`);
+      Notify.show('⏰ ' + t.text, (t.due ? 'Due ' + relDate(t.due) + (t.time ? ' at ' + fmtTime(t.time) : '') : 'Reminder') + ' · tap to open', 'tasks/' + t.id);
+      UI.toast(`${I('bell', 16)} ${esc(t.text)}`, '', 'tasks/' + t.id);
     }
   }
   if (changed) App.refresh();

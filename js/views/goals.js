@@ -30,6 +30,9 @@ const Goals = {
   title: 'Goals',
   sub() { const a = Store.d.goals.filter(g => this.progress(g) < 1); return `${a.length} active · ${Store.d.goals.length - a.length} achieved`; },
   actions() { return `<button class="btn primary" onclick="Goals.edit()">${I('plus', 16)}<span class="hide-sm">New goal</span></button>`; },
+  after(el, p = []) {
+    if (p[0] && Store.goal(p[0])) { const id = p[0]; App.params = []; history.replaceState(null, '', '#/goals'); setTimeout(() => this.edit(id), 60); }
+  },
   render() {
     const gs = Store.d.goals;
     const active = gs.filter(g => this.progress(g) < 1);

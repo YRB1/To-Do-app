@@ -53,7 +53,7 @@ const Music = {
     if (info) UI.toast(`${I('music', 16)} ${esc(p.name)} — press play in the player`, 'success');
   },
   toggle(force) { const s = this.st(); s.open = force ?? !s.open; Store.save(); $('#musicDock')?.classList.toggle('open', s.open); },
-  stop() { const s = this.st(); s.current = ''; Store.save(); this.renderDock(); if (App.cur === 'music') App.render(); },
+  stop(keepView) { const s = this.st(); s.current = ''; Store.save(); this.renderDock(); if (App.cur === 'music' && !keepView) App.render(); },
   remove(id) {
     const s = this.st(); s.playlists = s.playlists.filter(p => p.id !== id);
     if (s.current === id) s.current = '';
@@ -65,7 +65,9 @@ const Music = {
   renderDock() {
     const dock = $('#musicDock'); if (!dock) return;
     const p = this.current(), info = p && this.parse(p.url);
+    if (!info && AppleMusic.item()) { dock.dataset.src = 'am'; dock.innerHTML = AppleMusic.dockHTML(); dock.className = 'music-dock on am'; return; }
     if (!info) { dock.className = 'music-dock'; dock.innerHTML = ''; dock.dataset.src = ''; return; }
+    if (AppleMusic.mk?.isPlaying) AppleMusic.mk.pause();
     if (dock.dataset.src !== info.embed) {
       dock.dataset.src = info.embed;
       dock.innerHTML = `<div class="md-bar">
@@ -86,8 +88,9 @@ const Music = {
     const apple = q => `https://music.apple.com/search?term=${encodeURIComponent(q)}`;
     const spot = q => `https://open.spotify.com/search/${encodeURIComponent(q)}`;
     return `<div class="dash">
+      ${AppleMusic.card()}
       <div class="glass card s7">
-        <div class="card-h"><h2>${I('music')}Now playing</h2></div>
+        <div class="card-h"><h2>${I('music')}Now playing — links</h2></div>
         ${info ? `<div class="row" style="gap:16px;flex-wrap:wrap">
             <div class="biz-av xl" style="--c:${this.icon(info.kind)}">${I('music', 30, 2.2)}</div>
             <div class="grow" style="min-width:180px"><div class="goal-title">${esc(cur.name)}</div><div class="faint" style="font-size:13px">${info.service} · plays in the bar at the bottom of the screen, on every page</div></div>
