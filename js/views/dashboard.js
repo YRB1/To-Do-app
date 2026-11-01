@@ -57,8 +57,50 @@ const QUOTES = [
   ["Opportunities don't happen. You create them.","Chris Grosser"],
   ["Wealth is not about having a lot of money; it's about having a lot of options.","Chris Rock"],
   ["Do not save what is left after spending, but spend what is left after saving.","Warren Buffett"],
+  ["Do things that don't scale.","Paul Graham"],
+  ["Make something people want.","Paul Graham"],
+  ["If you are not embarrassed by the first version of your product, you've launched too late.","Reid Hoffman"],
+  ["Ideas are easy. Implementation is hard.","Guy Kawasaki"],
+  ["Hard work beats talent when talent doesn't work hard.","Tim Notke"],
+  ["Losers have goals. Winners have systems.","Scott Adams"],
+  ["Your most unhappy customers are your greatest source of learning.","Bill Gates"],
+  ["Chase the vision, not the money; the money will end up following you.","Tony Hsieh"],
+  ["Work like there is someone working 24 hours a day to take it all away from you.","Mark Cuban"],
+  ["When something is important enough, you do it even if the odds are not in your favor.","Elon Musk"],
+  ["Amateurs sit and wait for inspiration, the rest of us just get up and go to work.","Stephen King"],
+  ["Make it work, make it right, make it fast.","Kent Beck"],
+  ["The goal of a successful trader is to make the best trades. Money is secondary.","Alexander Elder"],
+  ["Motivation is what gets you started. Habit is what keeps you going.","Jim Ryun"],
+  ["Amateurs hope. Professionals work.","Garson Kanin"],
 ];
 // A new quote each day (same quote all day, cycles through the list).
+// A fresh quote every hour (same one all hour); tap to cycle.
+const Quotes = {
+  off: 0,
+  now() { const n = new Date(), h = Math.floor(n.getTime() / 36e5); return QUOTES[(((h * 7 + this.off) % QUOTES.length) + QUOTES.length) % QUOTES.length]; },
+  next() { this.off++; const el = $('#nowQuote'); if (!el) return; const [q, a] = this.now(); el.classList.remove('in'); void el.offsetWidth; el.innerHTML = this.html(q, a); el.classList.add('in'); },
+  html(q, a) { return `<p>“${esc(q)}”</p><span>${esc(a)}</span>`; },
+};
+const DayClock = {
+  html() {
+    const n = new Date();
+    const hm = n.toLocaleTimeString(LOCALE, { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `<b>${hm}</b><i>${pad(n.getSeconds())}</i>`;
+  },
+  dayLeft() {
+    const n = new Date(), start = new Date(n); start.setHours(0, 0, 0, 0);
+    const p = (n - start) / 864e5, left = 864e5 - (n - start);
+    const h = Math.floor(left / 36e5), m = Math.floor(left % 36e5 / 6e4);
+    return { p, txt: `${h}h ${pad(m)}m left today` };
+  },
+  tick() {
+    const c = $('#nowClock'); if (!c) return;
+    c.innerHTML = this.html();
+    const d = this.dayLeft(), b = $('#nowBar'), t = $('#nowLeft');
+    if (b) b.style.width = (d.p * 100).toFixed(2) + '%';
+    if (t) t.textContent = d.txt;
+  },
+};
 function quoteOfDay() {
   const n = new Date(), day = Math.floor(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) / 864e5);
   return QUOTES[(day * 7) % QUOTES.length];
@@ -144,13 +186,21 @@ const Dashboard = {
 
     return `<div class="dash">
       ${sampleBanner}${installTip}
+      <div class="now s12">
+        <div class="now-time">
+          <div class="now-clock" id="nowClock" aria-label="Current time">${DayClock.html()}</div>
+          <div class="now-day"><b>${fmtDay(t0, { weekday: 'long' })}</b><span>${fmtDay(t0, { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+            <div class="now-bar"><i id="nowBar" style="width:${(DayClock.dayLeft().p * 100).toFixed(2)}%"></i></div><small id="nowLeft">${DayClock.dayLeft().txt}</small></div>
+        </div>
+        <button class="now-quote in" id="nowQuote" onclick="Quotes.next()" title="Tap for another quote">${Quotes.html(...Quotes.now())}</button>
+      </div>
       <div class="glass card hero s8">
         <div class="hero-grid">
           <div>
             <div class="eyebrow">${I('crown', 15)} Net worth</div>
             <div class="big">${money(nw)}</div>
             <div class="row wrap">${prev != null ? `<span class="delta">${I(nw >= prev ? 'up' : 'down', 14)}${money(nw - prev, { sign: true })}</span>` : ''}<span class="delta">${pct(Store.s.freedomNumber ? nw / Store.s.freedomNumber : 0, 1)} to freedom</span></div>
-            <div class="quote">“${esc(quote)}”<span class="quote-by">— ${esc(author)} · quote of the day</span></div>
+
           </div>
           <div>${Chart.area(hist.map(h => h.value), { h: 150, fmt: v => money(v, { compact: true }) })}</div>
         </div>

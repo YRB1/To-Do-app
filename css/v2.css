@@ -370,3 +370,26 @@ a.li.click { text-decoration: none; }
 .j-lock h2 { font-size: 22px; letter-spacing: -.03em; }
 .j-lock .input { text-align: center; font-size: 22px; letter-spacing: .4em; max-width: 200px; }
 @media (max-width: 900px) { .j-cols, .j-mood { grid-template-columns: 1fr; } .j-page { padding: 18px; } .journal .s8, .journal .s4 { grid-column: span 12; } }
+
+/* ── Home: live clock + quotes ───────────────────────────── */
+.now { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: center; padding: 6px 4px 4px; }
+.now-time { display: flex; align-items: center; gap: 20px; }
+.now-clock { display: flex; align-items: flex-start; font-family: var(--display); font-variant-numeric: tabular-nums; line-height: .85; }
+.now-clock b { font-size: clamp(56px, 7vw, 88px); font-weight: 800; letter-spacing: -.055em; }
+.now-clock i { font-style: normal; font-size: 20px; font-weight: 700; color: var(--gold); margin: 6px 0 0 6px; width: 2ch; }
+.now-day { display: flex; flex-direction: column; gap: 2px; min-width: 150px; }
+.now-day b { font-family: var(--display); font-size: 19px; font-weight: 700; letter-spacing: -.02em; }
+.now-day span, .now-day small { font-size: 13px; color: var(--text3); }
+.now-bar { height: 5px; border-radius: 99px; background: var(--stroke-2); overflow: hidden; margin: 8px 0 3px; }
+.now-bar i { display: block; height: 100%; border-radius: 99px; background: var(--gold-grad); transition: width 1s linear; }
+.now-quote { text-align: left; border: 0; border-left: 2px solid color-mix(in srgb, var(--bullion) 55%, transparent); background: none; padding: 4px 0 4px 22px; cursor: pointer; color: inherit; font: inherit; }
+.now-quote p { font-family: var(--display); font-size: clamp(18px, 1.9vw, 23px); font-weight: 600; letter-spacing: -.025em; line-height: 1.3; max-width: 54ch; text-wrap: balance; }
+.now-quote span { display: block; margin-top: 8px; font-size: 13px; color: var(--text3); }
+.now-quote span::before { content: '— '; }
+.now-quote.in { animation: qIn .5s var(--ease); }
+@keyframes qIn { from { opacity: 0; transform: translateY(4px); } }
+@media (max-width: 900px) {
+  .now { grid-template-columns: 1fr; gap: 18px; }
+  .now-quote { padding-left: 16px; }
+}
+@media (max-width: 640px) { .now { order: -2; } }
