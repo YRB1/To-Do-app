@@ -191,7 +191,7 @@ const Store = {
       tasks: [], goals: [], businesses: [], trades: [], backtests: [], setups: [], accounts: [],
       tjLists: JSON.parse(JSON.stringify(TJ_DEFAULTS)),
       assets: [], incomes: [], nwHistory: [], habits: [], focus: [],
-      spaces: [], chat: [],
+      spaces: [], chat: [], journal: [],
     };
   },
   load() {
@@ -542,6 +542,7 @@ const NAV = [
   { id: 'dashboard', label: 'Home', icon: 'home' },
   { id: 'tasks', label: 'Tasks', icon: 'tasks' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
+  { id: 'journal', label: 'Journal', icon: 'book' },
   { id: 'spaces', label: 'Sections', icon: 'folder', spaces: true },
   { sec: 'Build' },
   { id: 'goals', label: 'Goals', icon: 'target' },
@@ -597,7 +598,7 @@ const App = {
       <div class="sidebar-foot">
         <a class="me side-link ${this.cur === 'profile' ? 'active' : ''}" href="#/profile">${Profile.avatar()}<div class="grow"><b class="ellipsis">${esc(name)}</b><small>Net worth ${money(nw, { compact: true })}</small></div>${I('settings', 16)}</a>
       </div>`;
-    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect'];
+    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect', 'journal'];
     $('#tabbar').innerHTML = TABS.map(([id, label, icon]) => {
       const active = id === 'more' ? moreIds.includes(this.cur) : this.cur === id || (id === 'spaces' && this.cur === 'space');
       return id === 'more'
@@ -607,7 +608,7 @@ const App = {
     Theme.apply();
   },
   more() {
-    const tiles = [['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
+    const tiles = [['journal', 'Journal', 'book'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
     UI.modal({
       title: 'More', body: `<div class="tiles">${tiles.map(([id, l, ic]) => `<a class="tile" href="#/${id}">${I(ic, 24)}${l}</a>`).join('')}</div>
         <div class="row mt"><button class="btn block" onclick="Theme.toggle()">${I(Theme.resolved() === 'dark' ? 'sun' : 'moon', 16)}Switch to ${Theme.resolved() === 'dark' ? 'light' : 'dark'} mode</button></div>`,
