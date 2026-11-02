@@ -109,6 +109,7 @@ const Coach = {
     });
     const je = (d.journal || []).find(e => e.date === t0);
     if (h >= 20 && !Journal.hasContent(je)) add({ id: 'journal', to: 'journal', area: 'Mindset', priority: Journal.streak() >= 2 ? 'high' : 'low', icon: 'book', title: Journal.streak() >= 2 ? `Keep your ${Journal.streak()}-day journal streak` : 'Write tonight’s journal', detail: 'Two minutes: your wins, one lesson, and tomorrow’s top 3.' });
+    if (h >= 6 && !Vision.saidToday()) add({ id: 'aff', to: 'vision', area: 'Mindset', priority: 'med', icon: 'sparkles', title: 'Say your daily affirmations', detail: 'Two minutes, out loud. Tap to open them.', go: ['Say them now', 'Vision.read()'] });
     if (h >= 6 && h < 11 && !(je?.intention)) add({ id: 'journal_am', to: 'journal', area: 'Mindset', priority: 'low', icon: 'sun', title: 'Set today’s intention', detail: 'Write the one thing that makes today a win, and your top 3.' });
     d.habits.forEach(hb => { const s = Habits.streak(hb); if (s >= 3 && !hb.days[t0] && h >= 17) add({ id: 'streak_' + hb.id, to: 'habits', area: 'Habits', priority: 'high', icon: 'flame', title: `Keep your ${s}-day “${hb.name}” streak alive`, detail: 'Do it before the day ends.', go: ['Mark done', `Habits.toggle('${hb.id}')`] }); });
     const lastNw = d.nwHistory[d.nwHistory.length - 1];
@@ -185,6 +186,7 @@ Return a short summary (2-4 sentences, plain text) and 4-8 suggestions. For each
       wealth: { net_worth: Math.round(Wealth.netWorth()), monthly_income: Math.round(Wealth.monthlyIncome()), monthly_expenses: Store.s.monthlyExpenses, passive_income: Wealth.passive() },
       habits: d.habits.map(h => ({ name: h.name, streak: Habits.streak(h), last_30_days_pct: Math.round(Habits.rate(h) * 100), done_today: !!h.days[t0] })),
       focus_minutes_today: Focus.todayMin(),
+      vision: Store.d.vision ? { statement: Store.d.vision.statement, target: Store.d.vision.target, reasons_why: Store.d.vision.reasons, routine_now: Routine.now()?.cur.l } : undefined,
     };
   },
   loading: false,
