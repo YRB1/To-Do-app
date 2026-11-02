@@ -17,7 +17,7 @@ function seedSpaces() {
       rungs: r('One paying client at any price (no more free sites)', 'One new client every month', 'Every client on a monthly retainer'),
       daily: dly('Send 30 cold emails', 'Answer every lead within 5 minutes'),
       links: [L('yrbnova.com', 'https://yrbnova.com'), L('VoiceDesk backend', 'https://ai-receptionist-backend-sage.vercel.app')], repo: 'YRB1/YRB-Nova', notes: '', createdAt: now },
-    { id: 'sp_leadsnipe', name: 'LeadSnipe', emoji: '🎯', color: '#e8c27a', status: 'Active', bizId: 'b_clientsniper', order: 1,
+    { id: 'sp_leadsnipe', name: 'ClientSniper', emoji: '🎯', color: '#e8c27a', status: 'Active', bizId: 'b_clientsniper', order: 1,
       mission: 'The lead source that feeds YRB Nova.', deadline: '', deadlineLabel: '',
       rungs: r('One paying subscriber you don’t know', 'Ten paying subscribers'), daily: [],
       links: [L('clientsniperofficial.com', 'https://clientsniperofficial.com')], repo: 'clientsniper/clientsniper-simple', notes: '', createdAt: now },
@@ -43,6 +43,8 @@ function seedSpaces() {
   ];
 }
 function ensureSpaces(d) {
+  // Rename: LeadSnipe → ClientSniper (for data already saved on the device)
+  if (!d.settings.csRenamed) { (d.spaces || []).forEach(x => { if (/^leadsnipe$/i.test(x.name)) x.name = 'ClientSniper'; }); d.settings.csRenamed = true; }
   if (d.settings.spacesSeeded) return;
   if (!d.spaces.length) d.spaces = seedSpaces();
   d.settings.spacesSeeded = true;
