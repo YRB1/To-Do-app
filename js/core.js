@@ -200,8 +200,14 @@ const Store = {
     this.d = raw ? this.normalize(raw) : seedData();
     const before = this.d.settings.yrbSeeded;
     ensureYrbBusinesses(this.d);
-    const hadSpaces = this.d.settings.spacesSeeded && this.d.settings.csRenamed;
+    const hadSpaces = this.d.settings.spacesSeeded && this.d.settings.csRenamed && this.d.settings.sp3 && this.d.settings.nwZero && this.d.settings.spTasks;
     ensureSpaces(this.d);
+    // Start net worth from £0: drop the sample assets, income and history (anything you added stays)
+    if (!this.d.settings.nwZero) {
+      for (const k of ['assets', 'incomes', 'nwHistory']) this.d[k] = this.d[k].filter(x => !x.sample);
+      if (!this.d.assets.length) this.d.nwHistory = [{ date: today(), value: 0 }];
+      this.d.settings.nwZero = true;
+    }
     if (!raw || !before || !hadSpaces) this.save();
   },
   normalize(o) {
