@@ -37,17 +37,84 @@ function seedSpaces() {
     { id: 'sp_vaultline', name: 'Vaultline', emoji: '💎', color: '#94a3b8', status: 'Paused', bizId: '', order: 5,
       mission: 'App for collectors of watches, cars and art. Paused during the 90-day focus.', deadline: '', deadlineLabel: '',
       rungs: [], daily: [], links: [], repo: '', notes: '', createdAt: now },
-    { id: 'sp_clean', name: 'Cleaning startup', emoji: '🧽', color: '#a3e635', status: 'Paused', bizId: '', order: 6,
-      mission: 'Website is built. Paused during the 90-day focus.', deadline: '', deadlineLabel: '',
-      rungs: [], daily: [], links: [], repo: '', notes: '', createdAt: now },
+    { id: 'sp_clean', name: 'Taher Cleaning', emoji: '🧽', color: '#a3e635', status: 'Active', bizId: '', order: 6,
+      mission: 'Cleaning business. Website is built — next step is the first paying job.', deadline: '', deadlineLabel: '',
+      rungs: r('First paying cleaning job'), daily: [], links: [], repo: 'YRB1/taher-cleaning', notes: '', createdAt: now },
+    { id: 'sp_epiphany', name: 'Epiphany Fostering', emoji: '🏡', color: '#e879f9', status: 'Active', bizId: '', order: 7,
+      mission: '', deadline: '', deadlineLabel: '',
+      rungs: [], daily: [], links: [], repo: 'YRB1/Epiphany', notes: '', createdAt: now },
   ];
+}
+// Starter tasks for each live section (added once; skips any you already have)
+const STARTER_TASKS = {
+  sp_nova: [
+    ['Send 30 cold emails with the website + VoiceDesk offer', 0, 'high', 'weekdays'],
+    ['Write the outcome offer: website + VoiceDesk + instant follow-up, setup fee + monthly', 0, 'high'],
+    ['Pull 100 local businesses (garages, salons, trades) from ClientSniper', 1, 'med'],
+    ['Record a 60-second VoiceDesk demo call', 2, 'med'],
+    ['Publish 2 SEO pages (one industry, one town)', 4, 'med', 'weekly'],
+  ],
+  sp_leadsnipe: [
+    ['Decide rung 1: who the buyer is and the price for the first subscriber', 1, 'high'],
+    ['Message 10 agencies or freelancers who’d pay for leads', 2, 'med'],
+    ['List ClientSniper on 3 directories (G2, Capterra, Product Hunt)', 5, 'low'],
+  ],
+  sp_supreme: [
+    ['List the Hyso units and headphones on eBay and Facebook Marketplace', 1, 'med'],
+    ['Post 3 product videos, each with a different piece', 3, 'med'],
+    ['Share yrbsupreme.com with 10 people to get a sale outside Etsy', 5, 'low'],
+  ],
+  sp_trading: [
+    ['Journal every trade', 0, 'med', 'weekdays'],
+    ['Write evaluation rules: max risk per trade, no news trades, stop after 2 losses', 1, 'high'],
+    ['Choose and pay for the next evaluation', 7, 'med'],
+  ],
+  sp_uni: [
+    ['Check the CMA6009 presentation slot and time', 0, 'high'],
+    ['Practise the CMA6009 poster presentation out loud (timed)', 0, 'high'],
+    ['Final check and submit the CMA6009 poster', '2026-11-09', 'high'],
+  ],
+  sp_clean: [
+    ['Set prices for regular, deep and end-of-tenancy cleans', 2, 'high'],
+    ['Create a Google Business Profile for Taher Cleaning', 3, 'med'],
+    ['Post the Taher Cleaning website in 3 local Facebook groups', 4, 'med'],
+  ],
+  sp_epiphany: [
+    ['Write the mission and first rung for Epiphany Fostering', 0, 'med'],
+    ['Pick the final Epiphany design (main, lilac or yellow version)', 2, 'med'],
+    ['List what’s left before the Epiphany site goes live', 3, 'low'],
+  ],
+};
+function addStarterTasks(d) {
+  if (d.settings.spTasks) return;
+  const have = new Set(d.tasks.map(t => t.text.toLowerCase()));
+  for (const [sid, list] of Object.entries(STARTER_TASKS)) {
+    const sp = d.spaces.find(x => x.id === sid);
+    if (!sp || sp.status === 'Paused') continue;
+    for (const [text, due, priority, repeat] of list) {
+      if (have.has(text.toLowerCase())) continue;
+      d.tasks.push(normTask({ id: uid(), text, priority, repeat: repeat || 'none', due: typeof due === 'string' ? due : addDays(today(), due), spaceId: sid, bizId: sp.bizId || '' }));
+    }
+  }
+  d.settings.spTasks = true;
 }
 function ensureSpaces(d) {
   // Rename: LeadSnipe → ClientSniper (for data already saved on the device)
   if (!d.settings.csRenamed) { (d.spaces || []).forEach(x => { if (/^leadsnipe$/i.test(x.name)) x.name = 'ClientSniper'; }); d.settings.csRenamed = true; }
+  // v3: Taher Cleaning (was “Cleaning startup”) + Epiphany Fostering
+  if (!d.settings.sp3 && d.settings.spacesSeeded) {
+    const seed = seedSpaces();
+    const c = d.spaces.find(x => x.id === 'sp_clean' || /^cleaning startup$/i.test(x.name));
+    if (c) Object.assign(c, { name: 'Taher Cleaning', status: c.status === 'Paused' ? 'Active' : c.status, repo: c.repo || 'YRB1/taher-cleaning', mission: /paused during/i.test(c.mission || '') ? seed.find(x => x.id === 'sp_clean').mission : c.mission });
+    else if (!d.spaces.some(x => /taher/i.test(x.name))) d.spaces.push(seed.find(x => x.id === 'sp_clean'));
+    if (!d.spaces.some(x => /epiphany/i.test(x.name))) d.spaces.push({ ...seed.find(x => x.id === 'sp_epiphany'), order: d.spaces.length });
+  }
+  d.settings.sp3 = true;
+  if (d.settings.spacesSeeded) addStarterTasks(d);
   if (d.settings.spacesSeeded) return;
   if (!d.spaces.length) d.spaces = seedSpaces();
   d.settings.spacesSeeded = true;
+  addStarterTasks(d);
 }
 
 const Spaces = {
