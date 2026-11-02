@@ -457,3 +457,16 @@ body { overscroll-behavior-x: none; }
 @media (max-width: 900px) { .vi-streams { grid-template-columns: 1fr 1fr; } .rt-grid { grid-template-columns: 1fr; } .vi-hero { padding: 24px 20px; } .vision .s4, .vision .s5, .vision .s7 { grid-column: span 12; } }
 @media (max-width: 900px) { .now { grid-template-columns: minmax(0, 1fr); } }
 .now-extra > div { flex: 1 1 260px; }
+
+/* ── Today's focus ───────────────────────────────────────── */
+.tf-top3 { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: 14px; text-decoration: none; margin-bottom: 10px; background: rgba(232,194,122,.07); border: 1px solid rgba(232,194,122,.22); }
+.tf-top3 small { font-size: 12px; color: var(--gold); font-weight: 600; }
+.tf-top3 span { display: flex; gap: 10px; align-items: baseline; font-size: 14.5px; font-weight: 600; }
+.tf-top3 span b { font: 700 12.5px var(--display); color: var(--gold); width: 12px; }
+.tf-top3.empty { flex-direction: row; align-items: center; gap: 8px; color: var(--text2); font-size: 13.5px; border-style: dashed; }
+.tf-top3.empty span { font-weight: 500; font-size: 13.5px; }
+.tf-now { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--text3); margin: 0 2px 10px; }
+.tf-now b { color: var(--text); font-weight: 600; }
+.tf-now .ic { color: var(--profit-t); }
+.tf-now-row { position: relative; border-radius: 16px; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--profit) 55%, transparent); }
+.tf-now-row::before { content: 'Now'; position: absolute; top: -8px; right: 12px; z-index: 1; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--profit); color: #04130c; }

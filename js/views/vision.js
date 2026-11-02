@@ -70,6 +70,43 @@ function ensureVision(d) {
   d.settings.visionSeeded = true;
 }
 
+// Turn the routine + goals into real recurring tasks with reminders (once). Sample tasks are removed.
+function nextDow(dow) { const x = parseYmd(today()); while (x.getDay() !== dow) x.setDate(x.getDate() + 1); return ymd(x); }
+function nextWeekday() { const x = parseYmd(today()); while (x.getDay() === 0 || x.getDay() === 6) x.setDate(x.getDate() + 1); return ymd(x); }
+function ensureRoutineTasks(d) {
+  if (d.settings.routineTasks) return;
+  d.tasks = d.tasks.filter(t => !t.sample);
+  const goal = re => d.goals.find(g => re.test(g.title))?.id || '';
+  const sp = id => d.spaces.some(s => s.id === id) ? id : '';
+  const wk = nextWeekday(), tom = addDays(today(), 1);
+  const R = [
+    ['Pray, read the Bible and say my affirmations', '06:00', 'daily', today(), '', goal(/closer to god/i), 'high', 'Spiritual'],
+    ['Gym or walk + audiobook / podcast', '06:10', 'weekdays', wk, '', goal(/dream body/i), 'med', 'Health'],
+    ['Study dev — freeCodeCamp (2 hours)', '07:00', 'weekdays', wk, '', goal(/master coding/i), 'med', 'Dev'],
+    ['Etsy / eBay: research and improve listings', '17:00', 'weekdays', wk, sp('sp_supreme'), '', 'med', 'Store'],
+    ['Project work / trading', '20:00', 'weekdays', wk, '', '', 'med', 'Build'],
+    ['Read 30 minutes', '22:00', 'daily', today(), '', goal(/1 book a month/i), 'med', 'Reading'],
+    ['Backtest for 1 hour', '00:00', 'daily', tom, sp('sp_trading'), goal(/prop firms/i), 'med', 'Trading'],
+    ['Build a portfolio project or do freelance outreach', '09:00', 'weekly', nextDow(6), '', goal(/master coding/i), 'med', 'Dev'],
+    ['Product photography, listings and trend research', '13:00', 'weekly', nextDow(6), sp('sp_supreme'), '', 'med', 'Store'],
+    ['Review the week and journal trades', '09:00', 'weekly', nextDow(0), sp('sp_trading'), '', 'high', 'Review'],
+    ['Batch create content for Teez', '13:00', 'weekly', nextDow(0), '', goal(/teez/i), 'med', 'Content'],
+    ['Plan the week, meal prep, light dev practice', '18:00', 'weekly', nextDow(0), '', '', 'med', 'Planning'],
+  ];
+  const have = new Set(d.tasks.map(t => t.text.toLowerCase()));
+  for (const [text, time, repeat, due, spaceId, goalId, priority, cat] of R) {
+    if (have.has(text.toLowerCase())) continue;
+    const s = d.spaces.find(x => x.id === spaceId);
+    d.tasks.push(normTask({ id: uid(), text, time, repeat, due, spaceId, goalId, priority, cat, bizId: s?.bizId || '', reminder: new Date(`${due}T${time}:00`).getTime() }));
+  }
+  // Give the daily business must-dos a slot in the 7–10pm block
+  const ce = d.tasks.find(t => !t.done && /^send 30 cold emails/i.test(t.text));
+  if (ce) { ce.time = '19:00'; ce.due = ce.due && ce.due > today() ? ce.due : wk; ce.reminder = new Date(`${ce.due}T19:00:00`).getTime(); ce.reminderFired = false; }
+  const jt = d.tasks.find(t => !t.done && /^journal every trade$/i.test(t.text));
+  if (jt) { jt.time = '21:45'; jt.reminder = new Date(`${jt.due || today()}T21:45:00`).getTime(); jt.reminderFired = false; }
+  d.settings.routineTasks = true;
+}
+
 const Routine = {
   day(dt = new Date()) { const w = dt.getDay(); return w === 6 ? 'saturday' : w === 0 ? 'sunday' : 'weekdays'; },
   mins(hm) { const [h, m] = hm.split(':').map(Number); return h * 60 + m; },
@@ -124,6 +161,7 @@ const Vision = {
           <div class="card-h"><h2>${I('clock')}Routine</h2><span class="sub">${esc(v.motto)}</span><div class="right"><button class="btn xs ghost" onclick="Vision.editRoutine()">${I('edit', 13)}</button></div></div>
           ${r ? `<div class="rt-now"><small>Right now</small><b>${esc(r.cur.l)}</b><span>${r.cur.s}–${r.cur.e} · next: ${esc(r.next.l)} at ${r.next.s}</span></div>` : ''}
           <div class="rt-grid">${block('weekdays', v.routine.weekdays)}<div class="col-stack">${block('saturday', v.routine.saturday)}${block('sunday', v.routine.sunday)}</div></div>
+          <div class="row wrap mt"><button class="btn sm" onclick="Vision.toReminders()">${I('phone', 14)}Send today’s routine to iPhone Reminders</button><a class="btn sm ghost" href="#/tasks">${I('tasks', 14)}Routine tasks</a></div>
           <p class="vi-reminder">${esc(v.reminder)}</p>
         </div>
       </div>
@@ -148,6 +186,11 @@ const Vision = {
     </div>`;
   },
 
+  toReminders() {
+    const t0 = today(), ts = Store.d.tasks.filter(t => !t.done && t.time && t.due === t0).sort((a, b) => a.time.localeCompare(b.time));
+    if (!ts.length) return UI.toast('No timed tasks left today');
+    Reminders.send(ts);
+  },
   read() {
     const list = this.v().affirmations; let i = 0;
     const m = UI.modal({ title: 'Daily affirmations', body: `<div class="aff-read" id="affRead"></div>`, footer: [] });

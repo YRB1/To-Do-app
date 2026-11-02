@@ -160,8 +160,12 @@ const Dashboard = {
   actions() { return ''; },
   render() {
     const d = Store.d, t0 = today();
-    const focus = d.tasks.filter(t => (!t.done && ((t.due && t.due <= t0) || t.doing || (!t.due && t.priority === 'high'))) || (t.done && t.doneAt && ymd(new Date(t.doneAt)) === t0 && t.due && t.due <= t0))
-      .sort((a, b) => Tasks.smartSort(a, b)).slice(0, 8);
+    const nowHM = `${pad(new Date().getHours())}:${pad(new Date().getMinutes())}`;
+    const fSort = (a, b) => (a.done - b.done) || ((!!b.due && b.due < t0) - (!!a.due && a.due < t0)) || ((a.time ? 0 : 1) - (b.time ? 0 : 1)) || (a.time || '').localeCompare(b.time || '') || (PRI[a.priority] - PRI[b.priority]);
+    const focus = d.tasks.filter(t => (!t.done && ((t.due && t.due <= t0) || t.doing)) || (t.done && t.doneAt && ymd(new Date(t.doneAt)) === t0 && t.due && t.due <= t0)).sort(fSort);
+    const nowTask = focus.filter(t => !t.done && t.due === t0 && t.time && t.time <= nowHM).pop();
+    const top3 = ((d.journal || []).find(e => e.date === t0)?.top3 || []).filter(Boolean);
+    const rnow = Routine.now();
     const todayAll = d.tasks.filter(t => t.due === t0 || (t.due && t.due < t0 && !t.done) || (t.done && t.doneAt && ymd(new Date(t.doneAt)) === t0));
     const doneToday = d.tasks.filter(t => t.done && t.doneAt && ymd(new Date(t.doneAt)) === t0).length;
     const nw = Wealth.netWorth(), hist = d.nwHistory, prev = hist.length > 1 ? hist[hist.length - 2].value : null;
@@ -229,9 +233,12 @@ const Dashboard = {
       </div>
 
       <div class="glass card s7">
-        <div class="card-h"><h2>${I('zap')}Today’s focus</h2><span class="sub">${focus.filter(t => !t.done).length} open</span><div class="right"><a class="btn sm ghost" href="#/tasks">All tasks ${I('arrowR', 14)}</a></div></div>
+        <div class="card-h"><h2>${I('zap')}Today’s focus</h2><span class="sub">${focus.filter(t => !t.done).length} open · ${focus.filter(t => t.done).length} done</span><div class="right"><a class="btn sm ghost" href="#/tasks">All tasks ${I('arrowR', 14)}</a></div></div>
+        <a class="tf-top3 ${top3.length ? '' : 'empty'}" href="#/journal">${top3.length ? `<small>Your top 3</small>${top3.map((x, i) => `<span><b>${i + 1}</b>${esc(x)}</span>`).join('')}` : `${I('edit', 14)}<span>Set today’s top 3 — the three things that make today a win</span>`}</a>
+        ${rnow ? `<div class="tf-now">${I('clock', 14)}<span>Routine now: <b>${esc(rnow.cur.l)}</b></span></div>` : ''}
         <div class="quick-add" style="border:1px solid var(--stroke-2);background:var(--field);margin-bottom:12px">${I('plus', 18)}<input id="dashQa" placeholder="Add for today… (try “Call bank 2pm !high”)" onkeydown="if(event.key==='Enter'){event.preventDefault();Dashboard.quick()}"><button class="btn primary sm" onclick="Dashboard.quick()">Add</button></div>
-        ${focus.length ? focus.map(t => Tasks.row(t)).join('') : empty('check', 'Today is clear', 'Nothing due. Pull something forward from your goals.')}
+        <div class="tf-list">${focus.length ? focus.slice(0, 14).map(t => (t === nowTask ? '<div class="tf-now-row">' : '') + Tasks.row(t) + (t === nowTask ? '</div>' : '')).join('') : empty('check', 'Today is clear', 'Nothing due. Pull something forward from your goals.')}</div>
+        ${focus.length > 14 ? `<a class="btn sm ghost block mt-s" href="#/tasks/f/today">${focus.length - 14} more today ${I('arrowR', 14)}</a>` : ''}
       </div>
       <div class="glass card s5">
         <div class="card-h"><h2>${I('calendar')}Next 7 days</h2><div class="right"><a class="btn sm ghost" href="#/calendar">Calendar ${I('arrowR', 14)}</a></div></div>

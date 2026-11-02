@@ -75,15 +75,18 @@ const Coach = {
     const eg = Store.s.endGoal;
     if (!eg) add({ id: 'endgoal', area: 'Goals', priority: 'high', icon: 'crown', to: 'coach', title: 'Set your end goal', detail: 'Pick the one number everything builds towards so the app can show how close you are.', go: ['Set end goal', 'EndGoal.edit()'] });
     d.goals.filter(g => Goals.pace(g)?.cls === 'red').slice(0, 2).forEach(g => add({ id: 'behind_' + g.id, to: 'goals/' + g.id, area: 'Goals', priority: 'high', icon: 'target', title: `“${g.title}” is behind pace`, detail: `${Goals.pace(g).label}. ${pct(Goals.progress(g))} done. Block time for it this week.`, task: { text: `Push forward: ${g.title}`, goalId: g.id, bizId: g.bizId, priority: 'high', due: t0 } }));
-    d.goals.filter(g => Goals.progress(g) < 1 && !d.tasks.some(t => t.goalId === g.id && !t.done)).slice(0, 2).forEach(g => add({ id: 'nostep_' + g.id, to: 'goals/' + g.id, area: 'Goals', icon: 'target', title: `No next step for “${g.title}”`, detail: 'A goal without a scheduled next action is just a wish. Add one.', task: { text: `Next step: ${g.title}`, goalId: g.id, bizId: g.bizId, due: addDays(t0, 1) } }));
+    d.goals.filter(g => !g.sample && g.deadline && Goals.progress(g) < 1 && !d.tasks.some(t => t.goalId === g.id && !t.done)).sort((a, b) => a.deadline.localeCompare(b.deadline)).slice(0, 2).forEach(g => add({ id: 'nostep_' + g.id, to: 'goals/' + g.id, area: 'Goals', icon: 'target', title: `No next step for “${g.title}”`, detail: 'A goal without a scheduled next action is just a wish. Add one.', task: { text: `Next step: ${g.title}`, goalId: g.id, bizId: g.bizId, due: addDays(t0, 1) } }));
+    const focusBiz = d.spaces.find(x => x.status === 'Focus')?.bizId;
     d.businesses.forEach(b => {
       if (b.status === 'Paused') return;
+      const sp = d.spaces.find(x => x.bizId === b.id);
+      if (sp && sp.status === 'Paused') return;
       if (!d.tasks.some(t => t.bizId === b.id && !t.done)) add({ id: 'biznotasks_' + b.id, to: bizTo(b), area: 'Business', icon: 'briefcase', title: `${b.name} has no open tasks`, detail: 'Plan the next three moves that bring in revenue.', task: { text: `Plan next 3 revenue moves for ${b.name}`, bizId: b.id, priority: 'high', due: t0 } });
-      if (!+b.revenue && b.status !== 'Idea') add({ id: 'bizrev_' + b.id, to: bizTo(b), area: 'Business', priority: 'high', icon: 'coins', title: `Get ${b.name} its first revenue`, detail: 'Fastest path is direct outreach. Make a list and start today.', task: { text: `Reach out to 10 prospects for ${b.name}`, bizId: b.id, priority: 'high', due: t0 } });
+      if (!+b.revenue && b.status !== 'Idea') add({ id: 'bizrev_' + b.id, to: bizTo(b), area: 'Business', priority: b.id === focusBiz ? 'high' : 'low', icon: 'coins', title: `Get ${b.name} its first revenue`, detail: 'Fastest path is direct outreach. Make a list and start today.', task: { text: `Reach out to 10 prospects for ${b.name}`, bizId: b.id, priority: 'high', due: t0 } });
       if (!b.url) add({ id: 'bizurl_' + b.id, to: 'business/' + b.id, area: 'Business', priority: 'low', icon: 'globe', title: `Add ${b.name}’s website`, detail: 'Its logo will appear automatically once the site is linked.', go: ['Edit', `Business.edit('${b.id}')`] });
       if (b.status === 'Testing') add({ id: 'biztest_' + b.id, to: bizTo(b), area: 'Business', priority: 'low', icon: 'zap', title: `Decide on ${b.name}`, detail: 'Set a kill-or-commit date and the number it must hit by then.', task: { text: `Kill-or-commit review: ${b.name}`, bizId: b.id, due: addDays(t0, 14) } });
     });
-    const recent = d.trades.filter(t => t.account !== 'backtest' && t.date.slice(0, 10) >= addDays(t0, -30));
+    const recent = d.trades.filter(t => !t.sample && t.account !== 'backtest' && t.date.slice(0, 10) >= addDays(t0, -30));
     if (recent.length >= 5) {
       const s = tStats(recent);
       const mist = groupStats(recent.filter(t => tMistakes(t).length), tMistakes).sort((a, b) => a.s.net - b.s.net)[0];
@@ -94,7 +97,7 @@ const Coach = {
       const best = groupStats(recent, 'setup').filter(g => g.s.n >= 3 && g.label !== '—').sort((a, b) => b.s.net - a.s.net)[0];
       if (best && best.s.net > 0) add({ id: 'best_' + best.label, to: 'trading/playbook', area: 'Trading', priority: 'low', icon: 'star', title: `${best.label} is your edge right now`, detail: `${money(best.s.net, { sign: true })} over ${best.s.n} trades. Focus on A+ versions of it.` });
     }
-    d.accounts.filter(a => a.status === 'Active').forEach(a => {
+    d.accounts.filter(a => a.status === 'Active' && !a.sample).forEach(a => {
       const st = acctStats(a);
       if (st.ddLimit && st.ddWorst / st.ddLimit > .6) add({ id: 'dd_' + a.id, to: 'trading/accounts', area: 'Trading', priority: 'high', icon: 'down', title: `${a.name}: ${pct(st.ddWorst / st.ddLimit)} of max drawdown used`, detail: `Only ${money(st.ddLimit - st.ddWorst)} left. Cut risk per trade until you’re back above water.` });
       if (st.dailyLimit && -st.day / st.dailyLimit > .5) add({ id: 'daily_' + a.id, to: 'trading/accounts', area: 'Trading', priority: 'high', icon: 'x', title: `Stop trading ${a.name} today`, detail: `You’ve used ${pct(-st.day / st.dailyLimit)} of the daily loss limit.` });
@@ -109,12 +112,15 @@ const Coach = {
     });
     const je = (d.journal || []).find(e => e.date === t0);
     if (h >= 20 && !Journal.hasContent(je)) add({ id: 'journal', to: 'journal', area: 'Mindset', priority: Journal.streak() >= 2 ? 'high' : 'low', icon: 'book', title: Journal.streak() >= 2 ? `Keep your ${Journal.streak()}-day journal streak` : 'Write tonight’s journal', detail: 'Two minutes: your wins, one lesson, and tomorrow’s top 3.' });
+    const keyHabits = d.habits.filter(hb => /pray|bible|read 30|code/i.test(hb.name) && !hb.days[t0]);
+    if (h >= 18 && keyHabits.length) add({ id: 'habits_left', to: 'habits', area: 'Habits', priority: 'med', icon: 'flame', title: `Still to do today: ${keyHabits.map(x => x.name).join(', ')}`, detail: 'No wasted days. Tick them off before bed.' });
+    d.goals.filter(g => !g.deadline && Goals.progress(g) < 1 && /driving test|scirocco/i.test(g.title)).forEach(g => add({ id: 'dl_' + g.id, to: 'goals/' + g.id, area: 'Goals', priority: 'med', icon: 'clock', title: `Set a deadline for “${g.title}”`, detail: 'A goal without a deadline is a fantasy. Pick the date.' }));
     if (h >= 6 && !Vision.saidToday()) add({ id: 'aff', to: 'vision', area: 'Mindset', priority: 'med', icon: 'sparkles', title: 'Say your daily affirmations', detail: 'Two minutes, out loud. Tap to open them.', go: ['Say them now', 'Vision.read()'] });
     if (h >= 6 && h < 11 && !(je?.intention)) add({ id: 'journal_am', to: 'journal', area: 'Mindset', priority: 'low', icon: 'sun', title: 'Set today’s intention', detail: 'Write the one thing that makes today a win, and your top 3.' });
     d.habits.forEach(hb => { const s = Habits.streak(hb); if (s >= 3 && !hb.days[t0] && h >= 17) add({ id: 'streak_' + hb.id, to: 'habits', area: 'Habits', priority: 'high', icon: 'flame', title: `Keep your ${s}-day “${hb.name}” streak alive`, detail: 'Do it before the day ends.', go: ['Mark done', `Habits.toggle('${hb.id}')`] }); });
     const lastNw = d.nwHistory[d.nwHistory.length - 1];
     if (!lastNw || daysBetween(lastNw.date, t0) > 30) add({ id: 'nw', to: 'wealth', area: 'Wealth', icon: 'wallet', title: 'Update your net worth', detail: 'It’s been over a month. Update balances so your end goal stays accurate.', go: ['Open wealth', "App.go('wealth')"] });
-    if (Store.s.monthlyExpenses) { const cash = sum(d.assets.filter(a => a.kind !== 'liability' && a.cat === 'Cash'), a => a.value); if (cash / Store.s.monthlyExpenses < 3) add({ id: 'runway', to: 'wealth', area: 'Wealth', priority: 'high', icon: 'clock', title: `Cash runway under 3 months`, detail: `${money(cash)} cash vs ${money(Store.s.monthlyExpenses)}/month. Build a buffer before taking bigger risks.` }); }
+    if (Store.s.monthlyExpenses) { const cash = sum(d.assets.filter(a => a.kind !== 'liability' && a.cat === 'Cash'), a => a.value); if (d.assets.length && cash / Store.s.monthlyExpenses < 3) add({ id: 'runway', to: 'wealth', area: 'Wealth', priority: 'high', icon: 'clock', title: `Cash runway under 3 months`, detail: `${money(cash)} cash vs ${money(Store.s.monthlyExpenses)}/month. Build a buffer before taking bigger risks.` }); }
     if (!Focus.todayMin() && h >= 10 && h < 20) add({ id: 'focus', to: 'dashboard', area: 'Mindset', priority: 'low', icon: 'zap', title: 'No deep work yet today', detail: 'One 25-minute block on your most important task changes the day.', go: ['Start focus', "App.go('dashboard');setTimeout(()=>Focus.toggle(),300)"] });
     const lb = +localStorage.getItem('empire_lastBackup');
     if (!lb || Date.now() - lb > 14 * 864e5) add({ id: 'backup', to: 'profile/data', area: 'Mindset', priority: 'low', icon: 'download', title: 'Back up your data', detail: 'Your data lives on this device. Download a backup every couple of weeks.', go: ['Back up now', 'Backup.export();App.render()'] });
