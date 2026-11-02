@@ -107,6 +107,35 @@ function ensureRoutineTasks(d) {
   d.settings.routineTasks = true;
 }
 
+// One-off clean-up: drop example data, keep real goals (progress reset), tidy businesses, trading playbook.
+function cleanUpV1(d) {
+  if (d.settings.cleanV1) return;
+  for (const k of ['trades', 'backtests', 'setups', 'accounts', 'habits', 'assets', 'incomes', 'nwHistory', 'tasks']) d[k] = (d[k] || []).filter(x => !x.sample);
+  if (!d.nwHistory.length) d.nwHistory = [{ date: today(), value: 0 }];
+  if (!d.habits.some(h => /gym|walk/i.test(h.name))) d.habits.push({ id: 'h_' + uid(), name: 'Gym or walk', emoji: '🏋️', days: {}, createdAt: Date.now() });
+  d.goals.forEach(g => { if (g.sample) { g.current = g.start || 0; g.log = []; g.milestones.forEach(m => { m.done = false; }); g.sample = false; } });
+  // VoiceDesk lives inside YRB Nova now
+  const voice = d.businesses.find(b => b.id === 'b_voice');
+  if (voice) { d.tasks.forEach(t => { if (t.bizId === 'b_voice') t.bizId = 'b_nova'; }); d.goals.forEach(g => { if (g.bizId === 'b_voice') g.bizId = 'b_nova'; }); d.businesses = d.businesses.filter(b => b.id !== 'b_voice'); }
+  // Taher Cleaning: business idea
+  if (!d.businesses.some(b => /taher/i.test(b.name))) d.businesses.push({ id: 'b_taher', name: 'Taher Cleaning', emoji: '🧽', color: '#a3e635', status: 'Idea', url: '', logo: '', desc: 'Cleaning business — website built, first paying job next.', revenue: 0, target: 3000, costs: 0, notes: '', log: [], createdAt: Date.now() });
+  const tb = d.businesses.find(b => /taher/i.test(b.name)), ts = d.spaces.find(x => /taher/i.test(x.name));
+  if (ts && tb) { ts.bizId = tb.id; ts.status = ts.status === 'Focus' ? 'Focus' : 'Side'; d.tasks.forEach(t => { if (t.spaceId === ts.id) t.bizId = tb.id; }); }
+  // Trading: sweep of high/low + FVG
+  const L = d.tjLists || (d.tjLists = {});
+  L.confluences = [...new Set(['Sweep of high/low', 'FVG', ...(L.confluences || [])])];
+  if (!d.setups.some(s => /sweep/i.test(s.name))) d.setups.unshift({ id: 'st_sweepfvg', name: 'Sweep + FVG', rules: 'Mark the key highs and lows (Asia, London, previous day)\nWait for price to sweep a high or low — wick through, close back inside\nLook for displacement that leaves an FVG in the opposite direction\nEnter on the retrace into the FVG\nStop beyond the sweep wick\nTarget the opposite liquidity — minimum 2R\nNo trade if the sweep or the FVG is unclear', notes: 'Main gold setup.' });
+  const tr = d.spaces.find(x => x.id === 'sp_trading');
+  if (tr) {
+    tr.mission = 'Gold, traded by hand: sweep of a high or low, then an FVG entry. Protect the account first.';
+    tr.links ||= []; if (!tr.links.some(l => l.url === '#/trading/playbook')) tr.links.unshift({ id: uid(), label: 'Sweep + FVG playbook', url: '#/trading/playbook' });
+    tr.daily ||= []; if (!tr.daily.some(x => /sweep/i.test(x.text))) tr.daily.push({ id: uid(), text: 'Mark today’s highs and lows to watch for a sweep', days: {} });
+  }
+  if (!d.settings.name) d.settings.name = 'Yrb';
+  d.settings.sampleBanner = false;
+  d.settings.cleanV1 = true;
+}
+
 const Routine = {
   day(dt = new Date()) { const w = dt.getDay(); return w === 6 ? 'saturday' : w === 0 ? 'sunday' : 'weekdays'; },
   mins(hm) { const [h, m] = hm.split(':').map(Number); return h * 60 + m; },
