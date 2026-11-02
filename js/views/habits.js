@@ -32,7 +32,7 @@ const Habits = {
     const bestNow = Math.max(...hs.map(h => this.streak(h)));
     return `
       <div class="kpis">
-        <div class="kpi glass"><div class="row between"><div><div class="k-top"><div class="k-ic green">${I('check', 17)}</div><div class="label">Today</div></div><div class="value">${doneToday} / ${hs.length}</div><div class="sub">${doneToday === hs.length ? 'Perfect day 🔥' : `${hs.length - doneToday} to go`}</div></div>${ring(doneToday / hs.length, 58, 7, 'green')}</div></div>
+        <div class="kpi glass"><div class="row between"><div><div class="k-top"><div class="k-ic green">${I('check', 17)}</div><div class="label">Today</div></div><div class="value">${doneToday} / ${hs.length}</div><div class="sub">${doneToday === hs.length ? 'All done today' : `${hs.length - doneToday} to go`}</div></div>${ring(doneToday / hs.length, 58, 7, 'green')}</div></div>
         ${kpi('Longest active streak', `${bestNow} days`, { icon: 'flame', tone: 'gold' })}
         ${kpi('30-day consistency', pct(avg), { icon: 'up', sub: bar(avg, 'green') })}
       </div>

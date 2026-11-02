@@ -64,6 +64,7 @@ const Goals = {
           <div class="row wrap" style="gap:6px;margin-bottom:6px">${chip(esc(g.cat || 'Personal'), 'accent', meta.icon)}${pc ? chip(pc.label, pc.cls) : ''}</div>
           <div class="goal-title">${esc(g.title)}</div>
           ${g.why ? `<div class="goal-why">${esc(g.why)}</div>` : ''}
+          ${g.ifThen ? `<div class="goal-plan">${I('shield', 13)}<span>${esc(g.ifThen)}</span></div>` : `<button class="goal-plan add" onclick="Goals.edit('${g.id}')">${I('plus', 13)}<span>Add an if–then plan</span></button>`}
         </div>
       </div>
       ${g.kind === 'milestones'
@@ -99,7 +100,7 @@ const Goals = {
           g.current = isNum(o.add) ? (+g.current || 0) + o.add : isNum(o.current) ? o.current : g.current;
           g.log = (g.log || []).filter(l => l.date !== today()).concat({ date: today(), value: g.current });
           App.refresh();
-          if (before < 1 && this.progress(g) >= 1) UI.toast(`${I('crown', 16)} Goal achieved: ${esc(g.title)} — legendary`, 'success');
+          if (before < 1 && this.progress(g) >= 1) UI.toast(`${I('crown', 16)} Goal achieved: ${esc(g.title)}`, 'success');
           else UI.toast(`${I('check', 16)} Progress saved`, 'success');
         },
       }],
@@ -125,6 +126,8 @@ const Goals = {
       </div>
       ${F({ name: 'bizId', label: 'Business', type: 'select', value: g.bizId, options: [['', '— None —'], ...Store.d.businesses.map(b => [b.id, b.name])] })}
       ${F({ name: 'why', label: 'Why it matters', value: g.why, placeholder: 'Your reason — read it on hard days' })}
+      ${F({ name: 'obstacle', label: 'Main obstacle', value: g.obstacle || '', full: true, placeholder: 'What inside you or around you is most likely to stop this?' })}
+      ${F({ name: 'ifThen', label: 'If–then plan', value: g.ifThen || '', full: true, placeholder: 'If [that obstacle shows up], then I will [specific action].' })}
     </form>`;
     UI.modal({
       title: ex ? 'Edit goal' : 'New goal', body,

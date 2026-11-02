@@ -129,7 +129,7 @@ const Focus = {
     Object.assign(s, { running: false, remaining: s.len * 60 });
     this.persist();
     if (!silent) {
-      Notify.show(wasFocus ? 'Focus session complete 🔥' : 'Break over', wasFocus ? `${s.len} minutes banked. Take 5.` : 'Back to building.');
+      Notify.show(wasFocus ? 'Focus session complete' : 'Break over', wasFocus ? `${s.len} minutes banked. Take 5.` : 'Back to building.');
       UI.toast(`${I('flame', 16)} ${wasFocus ? `${s.len} focused minutes banked` : 'Break over — back to it'}`, 'success');
       if (App.cur === 'dashboard') App.render();
     }
@@ -202,7 +202,52 @@ const Dashboard = {
           <button class="now-aff ${Vision.saidToday() ? 'done' : ''}" onclick="Vision.read()">${I(Vision.saidToday() ? 'check' : 'sparkles', 16)}<span>${Vision.saidToday() ? 'Affirmations said today' : 'Say your affirmations'}</span>${Vision.affStreak() > 1 ? `<em>${I('flame', 12)}${Vision.affStreak()}</em>` : ''}</button>
         </div>
       </div>
-      <div class="glass card hero s8">
+      <div class="s12 dash-spaces">
+        <div class="ds-h"><h2>${I('folder')}Sections</h2><a class="btn sm ghost" href="#/spaces">All ${I('arrowR', 14)}</a></div>
+        <div class="ds-row">${Spaces.list().filter(x => x.status !== 'Paused').map(x => { const nr = Spaces.nextRung(x), cd = Spaces.countdown(x), open = Spaces.tasks(x).filter(t => !t.done).length; return `<a class="ds-chip ${x.status === 'Focus' ? 'focus' : ''}" href="#/space/${x.id}" style="--c:${esc(x.color)}"><span class="sp-emoji">${esc(x.emoji || '•')}</span><span class="grow"><b class="ellipsis">${esc(x.name)}</b><small class="ellipsis">${nr ? esc(nr.text) : open + ' open tasks'}</small></span>${cd ? `<em class="${cd.cls}">${cd.txt}</em>` : ''}</a>`; }).join('')}</div>
+      </div>
+      <div class="glass card s7 tf-card">
+        <div class="card-h"><h2>${I('zap')}Today’s focus</h2><span class="sub">${focus.filter(t => !t.done).length} open · ${focus.filter(t => t.done).length} done</span><div class="right">${DayPlan.button()}</div></div>
+        <a class="tf-top3 ${top3.length ? '' : 'empty'}" href="#/journal">${top3.length ? `<small>Your top 3</small>${top3.map((x, i) => `<span><b>${i + 1}</b>${esc(x)}</span>`).join('')}` : `${I('edit', 14)}<span>Set today’s top 3 — the three things that make today a win</span>`}</a>
+        ${rnow ? `<div class="tf-now">${I('clock', 14)}<span>Routine now: <b>${esc(rnow.cur.l)}</b></span></div>` : ''}
+        <div class="quick-add" style="border:1px solid var(--stroke-2);background:var(--field);margin-bottom:12px">${I('plus', 18)}<input id="dashQa" placeholder="Add for today… (try “Call bank 2pm !high”)" onkeydown="if(event.key==='Enter'){event.preventDefault();Dashboard.quick()}"><button class="btn primary sm" onclick="Dashboard.quick()">Add</button></div>
+        <div class="tf-list">${focus.length ? focus.slice(0, 14).map(t => (t === nowTask ? '<div class="tf-now-row">' : '') + Tasks.row(t) + (t === nowTask ? '</div>' : '')).join('') : empty('check', 'Today is clear', 'Nothing due. Pull something forward from your goals.')}</div>
+        ${focus.length > 14 ? `<a class="btn sm ghost block mt-s" href="#/tasks/f/today">${focus.length - 14} more today ${I('arrowR', 14)}</a>` : ''}
+      </div>
+      <div class="glass card s5">
+        <div class="card-h"><h2>${I('bell')}Reminders</h2><div class="right"><a class="btn sm ghost" href="#/coach">All ${I('arrowR', 14)}</a></div></div>
+        ${(() => { const ins = Coach.insights().slice(0, 4); return ins.length ? ins.map((s, i) => Coach.sugHTML(s, i, 'rule')).join('') : '<p class="faint" style="font-size:13px">Nothing needs you right now.</p>'; })()}
+      </div>
+
+      <div class="glass card s7">
+        <div class="card-h"><h2>${I('calendar')}Next 7 days</h2><div class="right"><a class="btn sm ghost" href="#/calendar">Calendar ${I('arrowR', 14)}</a></div></div>
+        ${upcoming.length ? upcoming.slice(0, 5).map(([ds, ts, evs]) => `<div class="agenda-day">${relDate(ds)} · ${fmtDay(ds, { day: 'numeric', month: 'short' })}</div>
+          ${evs.map(e => `<a class="ev-row" href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener"><span class="t">${e.time ? fmtTime(e.time) : 'All day'}</span><span class="n">${esc(e.title)}</span></a>`).join('')}
+          ${ts.slice(0, 3).map(t => Tasks.row(t)).join('')}`).join('') : `<p class="faint" style="font-size:13px">Nothing scheduled this week.${GCal.configured() ? '' : ' <a href="#/profile/integrations">Connect Google Calendar</a> to see your events here.'}</p>`}
+      </div>
+
+      <div class="glass card s5">${Focus.widget()}</div>
+      <div class="glass card s4">
+        <div class="card-h"><h2>${I('target')}Goals</h2><div class="right"><a class="btn sm ghost" href="#/goals">${I('arrowR', 14)}</a></div></div>
+        ${activeGoals.slice(0, 4).map(g => { const p = Goals.progress(g), pc = Goals.pace(g); return `<div class="li click" onclick="App.go('goals/${g.id}')">${ring(p, 42, 5, (GOAL_CATS[g.cat] || {}).ring || '')}<div class="li-b"><div class="li-t">${esc(g.title)}</div><div class="li-s">${pc ? pc.label : g.cat}</div></div><div class="li-v">${pct(p)}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No active goals. <a href="javascript:Goals.edit()">Set one</a>.</p>`}
+      </div>
+      <div class="glass card s4">
+        <div class="card-h"><h2>${I('flame')}Habits</h2><span class="sub">${d.habits.filter(h => h.days[t0]).length}/${d.habits.length}</span><div class="right"><a class="btn sm ghost" href="#/habits">${I('arrowR', 14)}</a></div></div>
+        <div class="habit-chips">${d.habits.map(h => `<button class="hchip ${h.days[t0] ? 'on' : ''}" onclick="Habits.toggle('${h.id}')"><span class="hk">${I('check', 12, 3)}</span>${esc(h.emoji || '')} ${esc(h.name)}${Habits.streak(h) > 1 ? `<span class="streak" style="font-size:12px">${I('flame', 12)}${Habits.streak(h)}</span>` : ''}</button>`).join('') || `<p class="faint" style="font-size:13px">No habits yet. <a href="javascript:Habits.edit()">Add one</a>.</p>`}</div>
+      </div>
+
+      <div class="glass card s4">
+        <div class="card-h"><h2>${I('briefcase')}Businesses</h2><div class="right"><a class="btn sm ghost" href="#/business">${I('arrowR', 14)}</a></div></div>
+        ${d.businesses.slice(0, 5).map(b => { const p = b.target ? b.revenue / b.target : 0; return `<div class="li click" onclick="App.go('${(Store.d.spaces.find(x => x.bizId === b.id) ? 'space/' + Store.d.spaces.find(x => x.bizId === b.id).id : 'business/' + b.id)}')">${Business.av(b, 'sm')}<div class="li-b"><div class="li-t">${esc(b.name)}</div>${bar(p, 'gold thin')}</div><div class="li-v">${money(b.revenue, { compact: true })}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No businesses yet. <a href="javascript:Business.edit()">Add one</a>.</p>`}
+      </div>
+      <div class="s12 kpis">
+        <a href="#/tasks" style="text-decoration:none;color:inherit">${kpi('Today', `${doneToday} / ${Math.max(todayAll.length, doneToday)}`, { icon: 'tasks', sub: bar(todayAll.length ? doneToday / todayAll.length : 0, 'green') })}</a>
+        <a href="#/business" style="text-decoration:none;color:inherit">${kpi('Business revenue', money(rev) + '<small class="faint" style="font-size:13px;font-weight:600"> /mo</small>', { icon: 'briefcase', tone: 'gold', sub: `${d.businesses.length} business${d.businesses.length === 1 ? '' : 'es'}` })}</a>
+        <a href="#/trading" style="text-decoration:none;color:inherit">${kpi('Trading this month', `<span class="${pnlCls(tm.net)}">${money(tm.net, { sign: true })}</span>`, { icon: 'candles', tone: tm.net >= 0 ? 'green' : 'red', sub: `${tm.n} trades · ${pct(tm.wr)} win rate` })}</a>
+        <a href="#/goals" style="text-decoration:none;color:inherit">${kpi('Goal progress', pct(gAvg), { icon: 'target', tone: 'blue', sub: `${activeGoals.length} active goals` })}</a>
+      </div>
+
+      <div class="glass card hero s6">
         <div class="hero-grid">
           <div>
             <div class="eyebrow">${I('crown', 15)} Net worth</div>
@@ -213,53 +258,7 @@ const Dashboard = {
           <div>${Chart.area(hist.map(h => h.value), { h: 150, fmt: v => money(v, { compact: true }) })}</div>
         </div>
       </div>
-      <div class="glass card s4">${Focus.widget()}</div>
-
-      <div class="s12 kpis">
-        <a href="#/tasks" style="text-decoration:none;color:inherit">${kpi('Today', `${doneToday} / ${Math.max(todayAll.length, doneToday)}`, { icon: 'tasks', sub: bar(todayAll.length ? doneToday / todayAll.length : 0, 'green') })}</a>
-        <a href="#/business" style="text-decoration:none;color:inherit">${kpi('Business revenue', money(rev) + '<small class="faint" style="font-size:13px;font-weight:600"> /mo</small>', { icon: 'briefcase', tone: 'gold', sub: `${d.businesses.length} business${d.businesses.length === 1 ? '' : 'es'}` })}</a>
-        <a href="#/trading" style="text-decoration:none;color:inherit">${kpi('Trading this month', `<span class="${pnlCls(tm.net)}">${money(tm.net, { sign: true })}</span>`, { icon: 'candles', tone: tm.net >= 0 ? 'green' : 'red', sub: `${tm.n} trades · ${pct(tm.wr)} win rate` })}</a>
-        <a href="#/goals" style="text-decoration:none;color:inherit">${kpi('Goal progress', pct(gAvg), { icon: 'target', tone: 'blue', sub: `${activeGoals.length} active goals` })}</a>
-      </div>
-
-      <div class="s12 dash-spaces">
-        <div class="ds-h"><h2>${I('folder')}Sections</h2><a class="btn sm ghost" href="#/spaces">All ${I('arrowR', 14)}</a></div>
-        <div class="ds-row">${Spaces.list().filter(x => x.status !== 'Paused').map(x => { const nr = Spaces.nextRung(x), cd = Spaces.countdown(x), open = Spaces.tasks(x).filter(t => !t.done).length; return `<a class="ds-chip ${x.status === 'Focus' ? 'focus' : ''}" href="#/space/${x.id}" style="--c:${esc(x.color)}"><span class="sp-emoji">${esc(x.emoji || '•')}</span><span class="grow"><b class="ellipsis">${esc(x.name)}</b><small class="ellipsis">${nr ? esc(nr.text) : open + ' open tasks'}</small></span>${cd ? `<em class="${cd.cls}">${cd.txt}</em>` : ''}</a>`; }).join('')}</div>
-      </div>
-      <div class="glass card s7">${EndGoal.card(true)}</div>
-      <div class="glass card s5">
-        <div class="card-h"><h2>${I('sparkles')}Coach</h2><div class="right"><a class="btn sm ghost" href="#/coach">All ${I('arrowR', 14)}</a></div></div>
-        ${(() => { const ins = Coach.insights().slice(0, 3); return ins.length ? ins.map((s, i) => Coach.sugHTML(s, i, 'rule')).join('') : '<p class="faint" style="font-size:13px">Nothing urgent. Keep executing.</p>'; })()}
-      </div>
-
-      <div class="glass card s7 tf-card">
-        <div class="card-h"><h2>${I('zap')}Today’s focus</h2><span class="sub">${focus.filter(t => !t.done).length} open · ${focus.filter(t => t.done).length} done</span><div class="right"><a class="btn sm ghost" href="#/tasks">All tasks ${I('arrowR', 14)}</a></div></div>
-        <a class="tf-top3 ${top3.length ? '' : 'empty'}" href="#/journal">${top3.length ? `<small>Your top 3</small>${top3.map((x, i) => `<span><b>${i + 1}</b>${esc(x)}</span>`).join('')}` : `${I('edit', 14)}<span>Set today’s top 3 — the three things that make today a win</span>`}</a>
-        ${rnow ? `<div class="tf-now">${I('clock', 14)}<span>Routine now: <b>${esc(rnow.cur.l)}</b></span></div>` : ''}
-        <div class="quick-add" style="border:1px solid var(--stroke-2);background:var(--field);margin-bottom:12px">${I('plus', 18)}<input id="dashQa" placeholder="Add for today… (try “Call bank 2pm !high”)" onkeydown="if(event.key==='Enter'){event.preventDefault();Dashboard.quick()}"><button class="btn primary sm" onclick="Dashboard.quick()">Add</button></div>
-        <div class="tf-list">${focus.length ? focus.slice(0, 14).map(t => (t === nowTask ? '<div class="tf-now-row">' : '') + Tasks.row(t) + (t === nowTask ? '</div>' : '')).join('') : empty('check', 'Today is clear', 'Nothing due. Pull something forward from your goals.')}</div>
-        ${focus.length > 14 ? `<a class="btn sm ghost block mt-s" href="#/tasks/f/today">${focus.length - 14} more today ${I('arrowR', 14)}</a>` : ''}
-      </div>
-      <div class="glass card s5">
-        <div class="card-h"><h2>${I('calendar')}Next 7 days</h2><div class="right"><a class="btn sm ghost" href="#/calendar">Calendar ${I('arrowR', 14)}</a></div></div>
-        ${upcoming.length ? upcoming.slice(0, 5).map(([ds, ts, evs]) => `<div class="agenda-day">${relDate(ds)} · ${fmtDay(ds, { day: 'numeric', month: 'short' })}</div>
-          ${evs.map(e => `<a class="ev-row" href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener"><span class="t">${e.time ? fmtTime(e.time) : 'All day'}</span><span class="n">${esc(e.title)}</span></a>`).join('')}
-          ${ts.slice(0, 3).map(t => Tasks.row(t)).join('')}`).join('') : `<p class="faint" style="font-size:13px">Nothing scheduled this week.${GCal.configured() ? '' : ' <a href="#/profile/integrations">Connect Google Calendar</a> to see your events here.'}</p>`}
-      </div>
-
-      <div class="glass card s4">
-        <div class="card-h"><h2>${I('target')}Goals</h2><div class="right"><a class="btn sm ghost" href="#/goals">${I('arrowR', 14)}</a></div></div>
-        ${activeGoals.slice(0, 4).map(g => { const p = Goals.progress(g), pc = Goals.pace(g); return `<div class="li click" onclick="App.go('goals/${g.id}')">${ring(p, 42, 5, (GOAL_CATS[g.cat] || {}).ring || '')}<div class="li-b"><div class="li-t">${esc(g.title)}</div><div class="li-s">${pc ? pc.label : g.cat}</div></div><div class="li-v">${pct(p)}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No active goals. <a href="javascript:Goals.edit()">Set one</a>.</p>`}
-      </div>
-      <div class="glass card s4">
-        <div class="card-h"><h2>${I('briefcase')}Businesses</h2><div class="right"><a class="btn sm ghost" href="#/business">${I('arrowR', 14)}</a></div></div>
-        ${d.businesses.slice(0, 5).map(b => { const p = b.target ? b.revenue / b.target : 0; return `<div class="li click" onclick="App.go('${(Store.d.spaces.find(x => x.bizId === b.id) ? 'space/' + Store.d.spaces.find(x => x.bizId === b.id).id : 'business/' + b.id)}')">${Business.av(b, 'sm')}<div class="li-b"><div class="li-t">${esc(b.name)}</div>${bar(p, 'gold thin')}</div><div class="li-v">${money(b.revenue, { compact: true })}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No businesses yet. <a href="javascript:Business.edit()">Add one</a>.</p>`}
-      </div>
-      <div class="glass card s4">
-        <div class="card-h"><h2>${I('flame')}Habits</h2><span class="sub">${d.habits.filter(h => h.days[t0]).length}/${d.habits.length}</span><div class="right"><a class="btn sm ghost" href="#/habits">${I('arrowR', 14)}</a></div></div>
-        <div class="habit-chips">${d.habits.map(h => `<button class="hchip ${h.days[t0] ? 'on' : ''}" onclick="Habits.toggle('${h.id}')"><span class="hk">${I('check', 12, 3)}</span>${esc(h.emoji || '')} ${esc(h.name)}${Habits.streak(h) > 1 ? `<span class="streak" style="font-size:12px">${I('flame', 12)}${Habits.streak(h)}</span>` : ''}</button>`).join('') || `<p class="faint" style="font-size:13px">No habits yet. <a href="javascript:Habits.edit()">Add one</a>.</p>`}</div>
-      </div>
-
+      <div class="glass card s6">${EndGoal.card(true)}</div>
       ${d.trades.some(t => t.account !== 'backtest') ? '' : `<div class="glass card s6">
         <div class="card-h"><h2>${I('candles')}Trading</h2><div class="right"><button class="btn sm primary" onclick="Trading.edit()">${I('plus', 14)}Log a trade</button></div></div>
         <p class="faint" style="font-size:13.5px">No trades logged yet. Your sweep + FVG playbook is ready — log each trade and the stats build themselves.</p>
@@ -277,5 +276,57 @@ const Dashboard = {
     </div>`;
   },
   quick() { Tasks.quick($('#dashQa'), { due: today() }); },
+};
+
+// Daily plan (morning) and shutdown (evening): carry over, pick a top 3, check the load; then close the day.
+const DayPlan = {
+  st() { return (Store.s.dayplan ||= {}); },
+  planned(d = today()) { return !!this.st()['p' + d]; },
+  shut(d = today()) { return !!this.st()['s' + d]; },
+  button() {
+    const h = new Date().getHours();
+    if (h >= 18 && !this.shut()) return `<button class="btn sm" onclick="DayPlan.shutdown()">${I('moon', 14)}Shut down</button>`;
+    return `<button class="btn sm ${this.planned() ? 'ghost' : 'gold'}" onclick="DayPlan.plan()">${I('sun', 14)}${this.planned() ? 'Re-plan' : 'Plan today'}</button>`;
+  },
+  open() { const t0 = today(); return Store.d.tasks.filter(t => !t.done && t.due && t.due <= t0); },
+  plan() {
+    const t0 = today(), late = Store.d.tasks.filter(t => !t.done && t.due && t.due < t0);
+    const je = (Store.d.journal || []).find(e => e.date === t0), top = (je?.top3 || ['', '', '']).concat(['', '', '']).slice(0, 3);
+    const todays = this.open().filter(t => !t.time);
+    UI.modal({ title: 'Plan today', body: `<form id="dpForm" onsubmit="return false" class="dp">
+      ${late.length ? `<div class="dp-sec"><b>1 · Carry over</b><p class="faint">Unfinished from before today. Keep it, push it, or drop it.</p>${late.map(t => `<div class="dp-row"><span class="grow ellipsis">${esc(t.text)}</span><select class="input sm" name="mv_${t.id}"><option value="today">Today</option><option value="tomorrow">Tomorrow</option><option value="week">Next week</option><option value="drop">Drop it</option></select></div>`).join('')}</div>` : ''}
+      <div class="dp-sec"><b>${late.length ? '2' : '1'} · Your top 3</b><p class="faint">The three things that make today a win. Everything else is a bonus.</p>
+        ${[0, 1, 2].map(i => `<input class="input" name="top${i}" list="dpList" value="${esc(top[i])}" placeholder="${['Most important', 'Second', 'Third'][i]}">`).join('')}
+        <datalist id="dpList">${todays.map(t => `<option value="${esc(t.text)}">`).join('')}</datalist></div>
+      <div class="dp-sec"><b>${late.length ? '3' : '2'} · Load check</b><p class="faint" id="dpLoad"></p></div>
+    </form>`,
+      footer: ['spacer', { label: 'Cancel', cls: 'ghost' }, { label: 'Lock in the plan', cls: 'primary', onClick: m => {
+        const o = readForm($('#dpForm', m.el));
+        late.forEach(t => { const v = o['mv_' + t.id]; if (v === 'drop') Store.d.tasks = Store.d.tasks.filter(x => x !== t); else t.due = v === 'tomorrow' ? addDays(t0, 1) : v === 'week' ? addDays(t0, 7) : t0; if (v !== 'drop' && t.reminder && t.time) { t.reminder = new Date(`${t.due}T${t.time}:00`).getTime(); t.reminderFired = false; } });
+        const e = Journal.ensure(t0); e.top3 = [o.top0, o.top1, o.top2].map(s => (s || '').trim()); e.updatedAt = Date.now();
+        this.st()['p' + t0] = 1; App.refresh(); UI.toast(`${I('check', 16)} Plan locked in`, 'success');
+      } }],
+      onOpen: m => {
+        const load = () => { const n = this.open().filter(t => !(late.includes(t) && /drop|tomorrow|week/.test($(`[name=mv_${t.id}]`, m.el)?.value || ''))).length;
+          $('#dpLoad', m.el).innerHTML = n > 14 ? `<span class="neg">${n} tasks today — too many to finish. Push the least important to tomorrow.</span>` : `${n} tasks today, including your routine. Realistic.`; };
+        $$('select', m.el).forEach(s => s.onchange = load); load();
+      } });
+  },
+  shutdown() {
+    const t0 = today(), left = this.open().filter(t => t.due === t0 || t.due < t0), je = (Store.d.journal || []).find(e => e.date === t0);
+    const nonRepeat = left.filter(t => t.repeat === 'none');
+    UI.modal({ title: 'Shut down the day', body: `<form id="sdForm" onsubmit="return false" class="dp">
+      <div class="dp-sec"><b>Done today</b><p class="faint">${Store.d.tasks.filter(t => t.done && t.doneAt && ymd(new Date(t.doneAt)) === t0).length} tasks finished.</p></div>
+      ${nonRepeat.length ? `<div class="dp-sec"><b>Still open</b><p class="faint">Ticked ones move to tomorrow.</p>${nonRepeat.map(t => `<label class="dp-row"><input type="checkbox" name="mv_${t.id}" checked><span class="grow ellipsis">${esc(t.text)}</span></label>`).join('')}</div>` : ''}
+      <div class="dp-sec"><b>Today’s wins</b><textarea class="input" name="wins" rows="3" style="height:auto;padding:10px" placeholder="What went right?">${esc(je?.wins || '')}</textarea></div>
+      <div class="dp-sec"><b>One lesson</b><input class="input" name="lesson" value="${esc(je?.lesson || '')}" placeholder="What you’d do differently"></div>
+    </form>`,
+      footer: ['spacer', { label: 'Cancel', cls: 'ghost' }, { label: 'Close the day', cls: 'primary', onClick: m => {
+        const o = readForm($('#sdForm', m.el));
+        nonRepeat.forEach(t => { if (o['mv_' + t.id]) { t.due = addDays(t0, 1); if (t.time && t.reminder) { t.reminder = new Date(`${t.due}T${t.time}:00`).getTime(); t.reminderFired = false; } } });
+        const e = Journal.ensure(t0); e.wins = o.wins; e.lesson = o.lesson; e.updatedAt = Date.now();
+        this.st()['s' + t0] = 1; App.refresh(); UI.toast(`${I('moon', 16)} Day closed. Tomorrow is planned.`, 'success');
+      } }] });
+  },
 };
 App.register('dashboard', Dashboard);

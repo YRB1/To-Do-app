@@ -129,16 +129,17 @@ const Tasks = {
     const od = this.isOverdue(t);
     const st = t.subtasks.length ? `${t.subtasks.filter(x => x.done).length}/${t.subtasks.length}` : '';
     const meta = [
-      t.priority === 'high' ? chip('High', 'red', 'flag') : t.priority === 'med' ? chip('Medium', 'amber', 'flag') : '',
+      t.priority === 'high' ? chip('High', 'red', 'flag') : '',
       t.doing && !board ? chip('In progress', 'accent', 'zap') : '',
-      biz ? `<span class="chip"><i class="dot" style="background:${esc(biz.color)}"></i>${esc(biz.name)}</span>` : '',
-      t.due ? chip(relDate(t.due) + (t.time ? ' · ' + fmtTime(t.time) : ''), od ? 'red' : t.due === t0 ? 'blue' : '', 'calendar') : '',
+      biz && !(t.spaceId && Store.space(t.spaceId)) ? `<span class="chip"><i class="dot" style="background:${esc(biz.color)}"></i>${esc(biz.name)}</span>` : '',
+      t.due ? chip(t.due === t0 && t.time ? fmtTime(t.time) : relDate(t.due) + (t.time ? ' · ' + fmtTime(t.time) : ''), od ? 'red' : t.due === t0 ? 'blue' : '', t.due === t0 && t.time ? 'clock' : 'calendar') : '',
       t.repeat !== 'none' ? chip(REPEAT_OPTS.find(r => r[0] === t.repeat)?.[1] || '', '', 'repeat') : '',
-      t.reminder && !t.done ? chip(fmtDT(t.reminder), t.reminderFired ? '' : 'amber', 'bell') : '',
+      t.reminder && !t.done && t.due && t.time && !t.reminderFired && Math.abs(t.reminder - new Date(`${t.due}T${t.time}:00`).getTime()) < 6e4 ? `<span class="chip amber" title="Reminder on">${I('bell', 12)}</span>` : '',
+      t.reminder && !t.done && !(t.due && t.time && Math.abs(t.reminder - new Date(`${t.due}T${t.time}:00`).getTime()) < 6e4) ? chip(fmtDT(t.reminder), t.reminderFired ? '' : 'amber', 'bell') : '',
       st ? chip(st, '', 'layers') : '',
       goal ? chip(esc(goal.title), 'gold', 'target') : '',
       t.spaceId && Store.space(t.spaceId) && App.params[0] !== t.spaceId ? `<span class="chip"><i class="dot" style="background:${esc(Store.space(t.spaceId).color)}"></i>${esc(Store.space(t.spaceId).name)}</span>` : '',
-      t.cat ? chip(esc(t.cat), '', 'tag') : '',
+      t.cat && !t.goalId && !t.spaceId ? chip(esc(t.cat), '', 'tag') : '',
       t.gcalId ? chip('Google', 'blue', 'calendar') : '',
     ].join('');
     return `<div class="task p-${t.priority}${t.done ? ' done' : ''}${t.doing ? ' doing' : ''}" data-id="${t.id}">
@@ -210,7 +211,7 @@ const Tasks = {
     if (t.done) {
       const el = $(`.task[data-id="${id}"]`); el && el.classList.add('pop');
       const left = Store.d.tasks.filter(x => !x.done && x.due && x.due <= today()).length;
-      UI.toast(`${I('check', 16)} ${left ? `Done — ${left} left for today` : 'Done — today is cleared 🔥'}`, 'success');
+      UI.toast(`${I('check', 16)} ${left ? `Done — ${left} left for today` : 'Done — today is cleared'}`, 'success');
     }
   },
   nextDate(d, rep) {

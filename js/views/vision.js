@@ -135,6 +135,28 @@ function cleanUpV1(d) {
   d.settings.sampleBanner = false;
   d.settings.cleanV1 = true;
 }
+function gymV1(d) {
+  if (d.settings.gymV1) return;
+  const g = d.goals.find(x => /dream body/i.test(x.title));
+  if (g && !g.milestones.some(m => /membership/i.test(m.text))) g.milestones.unshift({ id: uid(), text: 'Start a gym membership', done: false });
+  if (!d.spaces.some(s => /gym/i.test(s.name))) d.spaces.push({ id: 'sp_gym', name: 'Gym & body', emoji: '🏋️', color: '#fb7185', status: 'Active', bizId: '', order: d.spaces.length,
+    mission: 'Train 4 times a week, stay consistent, eat well — build the dream body.', deadline: addDays(today(), 7), deadlineLabel: 'Gym membership started',
+    rungs: ['Start a gym membership', 'First session done', '4 sessions a week for 4 weeks', '4 sessions a week for 12 weeks'].map(text => ({ id: uid(), text, done: false })),
+    daily: [{ id: uid(), text: 'Hit your protein and water', days: {} }],
+    links: [{ id: uid(), label: 'PureGym — find a gym', url: 'https://www.puregym.com/gyms/' }, { id: uid(), label: 'The Gym Group — find a gym', url: 'https://www.thegymgroup.com/find-a-gym/' }],
+    repo: '', notes: 'Gym days (pick 4): Mon · Tue · Thu · Fri at 06:10\nSplit idea: Upper / Lower / Upper / Lower', createdAt: Date.now() });
+  const have = new Set(d.tasks.map(t => t.text.toLowerCase())), gid = g?.id || '';
+  [['Compare 3 gyms near you — price, opening hours, distance', 1, 'med'], ['Sign up for a gym membership', 3, 'high'], ['Plan a 4-day split (upper / lower / upper / lower)', 4, 'med'], ['First gym session', 4, 'high'], ['Buy gym basics: bottle, towel, trainers check', 3, 'low']]
+    .forEach(([text, dd, priority]) => { if (!have.has(text.toLowerCase())) d.tasks.push(normTask({ id: uid(), text, due: addDays(today(), dd), priority, goalId: gid, spaceId: 'sp_gym' })); });
+  d.settings.gymV1 = true;
+}
+function proV1(d) {
+  if (d.settings.proV1) return;
+  if (!d.settings.endGoal) d.settings.endGoal = { title: 'Financially independent by 2027', metric: 'income', target: 5000, current: 0, deadline: '2027-12-31' };
+  // The four original goals had back-dated start dates from the example data, which made them look 'behind pace'
+  d.goals.forEach(g => { if (['g_income', 'g_funded', 'g_store', 'g_books'].includes(g.id)) g.createdAt = Date.now(); });
+  d.settings.proV1 = true;
+}
 
 const Routine = {
   day(dt = new Date()) { const w = dt.getDay(); return w === 6 ? 'saturday' : w === 0 ? 'sunday' : 'weekdays'; },

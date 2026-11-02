@@ -1,5 +1,5 @@
 /* YRB’s World service worker — offline app shell. Bump VERSION on every deploy. */
-const VERSION = 'yrb-v2.6.0';
+const VERSION = 'yrb-v2.8.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/core.js', 'js/integrations.js', 'js/app.js',
