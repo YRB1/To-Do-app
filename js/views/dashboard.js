@@ -193,6 +193,10 @@ const Dashboard = {
             <div class="now-bar"><i id="nowBar" style="width:${(DayClock.dayLeft().p * 100).toFixed(2)}%"></i></div><small id="nowLeft">${DayClock.dayLeft().txt}</small></div>
         </div>
         <button class="now-quote in" id="nowQuote" onclick="Quotes.next()" title="Tap for another quote">${Quotes.html(...Quotes.now())}</button>
+        <div class="now-extra">
+          <div id="nowRoutine">${Routine.pill()}</div>
+          <button class="now-aff ${Vision.saidToday() ? 'done' : ''}" onclick="Vision.read()">${I(Vision.saidToday() ? 'check' : 'sparkles', 16)}<span>${Vision.saidToday() ? 'Affirmations said today' : 'Say your affirmations'}</span>${Vision.affStreak() > 1 ? `<em>${I('flame', 12)}${Vision.affStreak()}</em>` : ''}</button>
+        </div>
       </div>
       <div class="glass card hero s8">
         <div class="hero-grid">

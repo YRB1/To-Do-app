@@ -28,6 +28,7 @@
   setInterval(() => {
     Focus.tick(); tickClock(); DayClock.tick();
     const h = new Date().getHours();
+    if (new Date().getSeconds() === 0) { const nr = $('#nowRoutine'); if (nr) nr.innerHTML = Routine.pill(); }
     if (h !== lastHour) { lastHour = h; Quotes.off--; Quotes.next(); }
   }, 1000);
   setInterval(checkReminders, 20000);

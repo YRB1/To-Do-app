@@ -200,8 +200,9 @@ const Store = {
     this.d = raw ? this.normalize(raw) : seedData();
     const before = this.d.settings.yrbSeeded;
     ensureYrbBusinesses(this.d);
-    const hadSpaces = this.d.settings.spacesSeeded && this.d.settings.csRenamed && this.d.settings.sp3 && this.d.settings.nwZero && this.d.settings.spTasks;
+    const hadSpaces = this.d.settings.spacesSeeded && this.d.settings.csRenamed && this.d.settings.sp3 && this.d.settings.nwZero && this.d.settings.spTasks && this.d.settings.visionSeeded;
     ensureSpaces(this.d);
+    ensureVision(this.d);
     // Start net worth from £0: drop the sample assets, income and history (anything you added stays)
     if (!this.d.settings.nwZero) {
       for (const k of ['assets', 'incomes', 'nwHistory']) this.d[k] = this.d[k].filter(x => !x.sample);
@@ -546,6 +547,7 @@ const Chart = {
 const NAV = [
   { sec: 'Today' },
   { id: 'dashboard', label: 'Home', icon: 'home' },
+  { id: 'vision', label: 'Vision & routine', icon: 'compass' },
   { id: 'tasks', label: 'Tasks', icon: 'tasks' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
   { id: 'journal', label: 'Journal', icon: 'book' },
@@ -604,7 +606,7 @@ const App = {
       <div class="sidebar-foot">
         <a class="me side-link ${this.cur === 'profile' ? 'active' : ''}" href="#/profile">${Profile.avatar()}<div class="grow"><b class="ellipsis">${esc(name)}</b><small>Net worth ${money(nw, { compact: true })}</small></div>${I('settings', 16)}</a>
       </div>`;
-    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect', 'journal'];
+    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect', 'journal', 'vision'];
     $('#tabbar').innerHTML = TABS.map(([id, label, icon]) => {
       const active = id === 'more' ? moreIds.includes(this.cur) : this.cur === id || (id === 'spaces' && this.cur === 'space');
       return id === 'more'
@@ -614,7 +616,7 @@ const App = {
     Theme.apply();
   },
   more() {
-    const tiles = [['journal', 'Journal', 'book'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
+    const tiles = [['vision', 'Vision', 'compass'], ['journal', 'Journal', 'book'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
     UI.modal({
       title: 'More', body: `<div class="tiles">${tiles.map(([id, l, ic]) => `<a class="tile" href="#/${id}">${I(ic, 24)}${l}</a>`).join('')}</div>
         <div class="row mt"><button class="btn block" onclick="Theme.toggle()">${I(Theme.resolved() === 'dark' ? 'sun' : 'moon', 16)}Switch to ${Theme.resolved() === 'dark' ? 'light' : 'dark'} mode</button></div>`,
