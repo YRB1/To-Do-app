@@ -654,7 +654,10 @@ const Trading = {
     pickFile('.csv,text/csv,.txt', async f => {
       const rows = parseCSV(await f.text());
       if (rows.length < 2) return UI.toast('No rows found in that file', 'error');
-      const head = rows[0].map(h => h.trim().toLowerCase().replace(/[“”"]/g, ''));
+      const head = rows[0].map(h => h.trim().toLowerCase().replace(/[“”"]/g, '').replace(/[_]+/g, ' ').replace(/\s+/g, ' '));
+      // Numeric fields must point at a column that actually holds numbers (e.g. skip a "result" column of win/loss text).
+      const NUMERIC = new Set(['entry', 'exit', 'sl', 'tp', 'size', 'pnl', 'fees', 'r']);
+      const hasNums = j => { const vals = rows.slice(1).map(r => String(r[j] ?? '').trim()).filter(Boolean); return vals.length > 0 && vals.filter(v => /\d/.test(v) && !isNaN(v.replace(/[^0-9.\-eE]/g, '') || 'x')).length >= vals.length / 2; };
       const MAP = {
         date: ['open time', 'opentime', 'entry time', 'entry date', 'open date', 'date opened', 'opened', 'date', 'time', 'open'],
         exitDate: ['close time', 'exit time', 'closed', 'close date', 'exitdate'],
@@ -675,7 +678,7 @@ const Trading = {
       for (const pass of ['exact', 'partial']) for (const [k, names] of Object.entries(MAP)) {
         if (col[k] != null) continue;
         for (const nm of names) {
-          const i = head.findIndex((h, j) => !used.has(j) && (pass === 'exact' ? h === nm : h.includes(nm) && nm.length > 2));
+          const i = head.findIndex((h, j) => !used.has(j) && (pass === 'exact' ? h === nm : h.includes(nm) && nm.length > 2) && (!NUMERIC.has(k) || hasNums(j)));
           if (i >= 0) { col[k] = i; used.add(i); break; }
         }
       }
@@ -715,8 +718,18 @@ const Trading = {
           const o = readForm($('#impForm', m.el));
           const a = Store.d.accounts.find(x => x.id === o.accountId);
           parsed.forEach(t => { t.accountId = o.accountId; t.account = a ? a.type : (o.backtestId ? 'backtest' : 'live'); t.backtestId = o.backtestId; if (isNum(o.risk)) t.risk = o.risk; if (!t.setup && o.setup) t.setup = o.setup; });
-          Store.d.trades.push(...parsed); App.refresh();
-          UI.toast(`${I('check', 16)} Imported ${parsed.length} trades`, 'success');
+          // Re-importing the same trades updates them instead of duplicating (match on account, pair, side, time and entry).
+          const key = t => [t.accountId, t.symbol, t.side, (t.date || '').slice(0, 16), isNum(t.entry) ? (+t.entry).toFixed(2) : ''].join('|');
+          let updated = 0;
+          parsed.forEach(t => {
+            const ex = Store.d.trades.find(x => key(x) === key(t));
+            if (!ex) return Store.d.trades.push(t);
+            updated++;
+            for (const f of ['exitDate', 'entry', 'exit', 'size', 'pnl', 'fees', 'r', 'risk']) if (t[f] != null && t[f] !== '') ex[f] = t[f];
+            if (!ex.setup && t.setup) ex.setup = t.setup;
+          });
+          App.refresh();
+          UI.toast(`${I('check', 16)} ${updated ? `Updated ${updated}` : ''}${updated && parsed.length - updated ? ' · ' : ''}${parsed.length - updated ? `Imported ${parsed.length - updated}` : ''} trades`, 'success');
         } }],
       });
     });
