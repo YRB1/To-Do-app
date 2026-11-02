@@ -470,3 +470,15 @@ body { overscroll-behavior-x: none; }
 .tf-now .ic { color: var(--profit-t); }
 .tf-now-row { position: relative; border-radius: 16px; box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--profit) 55%, transparent); }
 .tf-now-row::before { content: 'Now'; position: absolute; top: -8px; right: 12px; z-index: 1; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--profit); color: #04130c; }
+
+/* ── Keep the app still on iPhone ────────────────────────── */
+/* iOS zooms into any text box under 16px — that zoom is what made the app shift around */
+@media (max-width: 900px) {
+  input, select, textarea, .input, .quick-add input, .search input, .cp-in, .j-ta, .chat-in textarea, .pal-in input { font-size: 16px !important; }
+}
+html, body { overscroll-behavior: none; touch-action: manipulation; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+[hidden] { display: none !important; }
+@media (max-width: 640px) { .tf-card { order: -1; } }
+.card-h h2 { white-space: nowrap; }
+.tf-top3.empty span { text-align: left; }
+@media (max-width: 640px) { .tf-card .card-h .sub { display: none; } }

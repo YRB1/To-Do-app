@@ -155,8 +155,8 @@ const Focus = {
 };
 
 const Dashboard = {
-  title() { return `${greet()}${Store.s.name ? ', ' + esc(Store.s.name.split(' ')[0]) : ''}`; },
-  sub() { return fmtDay(today(), { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); },
+  title() { return `Welcome, ${esc((Store.s.name || 'Yrb').split(' ')[0])}`; },
+  sub() { return `${greet()} · ${fmtDay(today(), { weekday: 'long', day: 'numeric', month: 'long' })}`; },
   actions() { return ''; },
   render() {
     const d = Store.d, t0 = today();
@@ -232,7 +232,7 @@ const Dashboard = {
         ${(() => { const ins = Coach.insights().slice(0, 3); return ins.length ? ins.map((s, i) => Coach.sugHTML(s, i, 'rule')).join('') : '<p class="faint" style="font-size:13px">Nothing urgent. Keep executing.</p>'; })()}
       </div>
 
-      <div class="glass card s7">
+      <div class="glass card s7 tf-card">
         <div class="card-h"><h2>${I('zap')}Today’s focus</h2><span class="sub">${focus.filter(t => !t.done).length} open · ${focus.filter(t => t.done).length} done</span><div class="right"><a class="btn sm ghost" href="#/tasks">All tasks ${I('arrowR', 14)}</a></div></div>
         <a class="tf-top3 ${top3.length ? '' : 'empty'}" href="#/journal">${top3.length ? `<small>Your top 3</small>${top3.map((x, i) => `<span><b>${i + 1}</b>${esc(x)}</span>`).join('')}` : `${I('edit', 14)}<span>Set today’s top 3 — the three things that make today a win</span>`}</a>
         ${rnow ? `<div class="tf-now">${I('clock', 14)}<span>Routine now: <b>${esc(rnow.cur.l)}</b></span></div>` : ''}
@@ -260,7 +260,12 @@ const Dashboard = {
         <div class="habit-chips">${d.habits.map(h => `<button class="hchip ${h.days[t0] ? 'on' : ''}" onclick="Habits.toggle('${h.id}')"><span class="hk">${I('check', 12, 3)}</span>${esc(h.emoji || '')} ${esc(h.name)}${Habits.streak(h) > 1 ? `<span class="streak" style="font-size:12px">${I('flame', 12)}${Habits.streak(h)}</span>` : ''}</button>`).join('') || `<p class="faint" style="font-size:13px">No habits yet. <a href="javascript:Habits.edit()">Add one</a>.</p>`}</div>
       </div>
 
-      <div class="glass card s6">
+      ${d.trades.some(t => t.account !== 'backtest') ? '' : `<div class="glass card s6">
+        <div class="card-h"><h2>${I('candles')}Trading</h2><div class="right"><button class="btn sm primary" onclick="Trading.edit()">${I('plus', 14)}Log a trade</button></div></div>
+        <p class="faint" style="font-size:13.5px">No trades logged yet. Your sweep + FVG playbook is ready — log each trade and the stats build themselves.</p>
+        <div class="row wrap mt"><a class="btn sm" href="#/trading/playbook">${I('shield', 14)}Playbook</a><a class="btn sm ghost" href="#/trading/accounts">${I('wallet', 14)}Add your accounts</a></div>
+      </div>`}
+      <div class="glass card s6" ${d.trades.some(t => t.account !== 'backtest') ? '' : 'hidden'}>
         <div class="card-h"><h2>${I('candles')}Trading — this month</h2><div class="right"><a class="btn sm" href="#/trading">${I('pie', 14)}Analytics</a><button class="btn sm primary" onclick="Trading.edit()">${I('plus', 14)}Trade</button></div></div>
         ${Chart.area(tm.curve, { h: 130, cls: tm.net >= 0 ? 'green' : 'red', zero: true, fmt: v => money(v, { compact: true }) })}
         <div class="stat-row mt"><div><small>Net</small><b class="${pnlCls(tm.net)}">${money(tm.net, { sign: true, compact: true })}</b></div><div><small>Win rate</small><b>${pct(tm.wr)}</b></div><div><small>Profit factor</small><b>${pfFmt(tm.pf)}</b></div></div>
