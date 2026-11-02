@@ -209,6 +209,7 @@ const Dashboard = {
       <div class="glass card s7 tf-card">
         <div class="card-h"><h2>${I('zap')}Today’s focus</h2><span class="sub">${focus.filter(t => !t.done).length} open · ${focus.filter(t => t.done).length} done</span><div class="right">${DayPlan.button()}</div></div>
         <a class="tf-top3 ${top3.length ? '' : 'empty'}" href="#/journal">${top3.length ? `<small>Your top 3</small>${top3.map((x, i) => `<span><b>${i + 1}</b>${esc(x)}</span>`).join('')}` : `${I('edit', 14)}<span>Set today’s top 3 — the three things that make today a win</span>`}</a>
+        ${Review.weekTop3().length ? `<a class="tf-week" href="#/review"><small>This week</small>${Review.weekTop3().map(x => `<span>${esc(x)}</span>`).join('')}</a>` : ''}
         ${rnow ? `<div class="tf-now">${I('clock', 14)}<span>Routine now: <b>${esc(rnow.cur.l)}</b></span></div>` : ''}
         <div class="quick-add" style="border:1px solid var(--stroke-2);background:var(--field);margin-bottom:12px">${I('plus', 18)}<input id="dashQa" placeholder="Add for today… (try “Call bank 2pm !high”)" onkeydown="if(event.key==='Enter'){event.preventDefault();Dashboard.quick()}"><button class="btn primary sm" onclick="Dashboard.quick()">Add</button></div>
         <div class="tf-list">${focus.length ? focus.slice(0, 14).map(t => (t === nowTask ? '<div class="tf-now-row">' : '') + Tasks.row(t) + (t === nowTask ? '</div>' : '')).join('') : empty('check', 'Today is clear', 'Nothing due. Pull something forward from your goals.')}</div>

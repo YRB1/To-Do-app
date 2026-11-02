@@ -12,6 +12,7 @@
   App.route();
   Music.renderDock();
   Claude.probe();
+  Cloud.init();
   if (Store.s.appleMusicOn) AppleMusic.init().then(mk => mk && mk.isAuthorized && AppleMusic.loadLib());
   navigator.serviceWorker?.addEventListener?.('message', e => { if (e.data?.type === 'open') { const h = new URL(e.data.url).hash; if (h && h !== location.hash) location.hash = h; } });
 

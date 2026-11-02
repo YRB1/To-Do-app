@@ -225,6 +225,8 @@ const Store = {
     return out;
   },
   save() {
+    if (typeof Cloud === 'undefined' || !Cloud.applying) this.d._savedAt = Date.now();
+    if (typeof Cloud !== 'undefined') Cloud.dirty();
     try { localStorage.setItem(this.KEY, JSON.stringify(this.d)); }
     catch { UI.toast(`${I('info', 16)} Storage is full — export a backup from Profile`, 'error'); }
   },
@@ -555,6 +557,7 @@ const NAV = [
   { id: 'tasks', label: 'Tasks', icon: 'tasks' },
   { id: 'calendar', label: 'Calendar', icon: 'calendar' },
   { id: 'journal', label: 'Journal', icon: 'book' },
+  { id: 'review', label: 'Weekly review', icon: 'layers' },
   { id: 'spaces', label: 'Sections', icon: 'folder', spaces: true },
   { sec: 'Build' },
   { id: 'goals', label: 'Goals', icon: 'target' },
@@ -607,11 +610,11 @@ const App = {
       <a class="brand" href="#/dashboard" style="text-decoration:none"><div class="logo"><svg width="22" height="22" viewBox="104 96 304 330" fill="currentColor" aria-hidden="true"><path d="M118 104h78l60 104 60-104h78L292 268h-72z"/><rect x="220" y="262" width="22" height="160" rx="4"/><rect x="270" y="262" width="22" height="160" rx="4"/><rect x="220" y="300" width="72" height="16" rx="3"/><rect x="220" y="346" width="72" height="16" rx="3"/><rect x="220" y="392" width="72" height="16" rx="3"/></svg></div><div><b>YRB’s World</b><small>Command centre</small></div></a>
       <nav class="nav">${NAV.map(n => n.sec ? `<div class="nav-section">${n.sec}</div>` :
         `<a href="#/${n.id}" class="${this.cur === n.id || (n.id === 'spaces' && this.cur === 'space') ? 'active' : ''}">${I(n.icon)}<span>${n.label}</span>${counts[n.id] ? `<span class="count ${counts[n.id][1]}">${counts[n.id][0]}</span>` : ''}</a>` +
-        (n.spaces ? `<div class="nav-spaces">${Store.d.spaces.filter(x => !x.archived && x.status !== 'Paused').slice(0, 7).map(x => `<a href="#/space/${x.id}" class="${this.cur === 'space' && this.params[0] === x.id ? 'active' : ''}" style="--c:${esc(x.color)}"><i class="sp-dot"></i><span>${esc(x.name)}</span></a>`).join('')}</div>` : '')).join('')}</nav>
+        (n.spaces && (this.cur === 'spaces' || this.cur === 'space') ? `<div class="nav-spaces">${Store.d.spaces.filter(x => !x.archived && x.status !== 'Paused').slice(0, 7).map(x => `<a href="#/space/${x.id}" class="${this.cur === 'space' && this.params[0] === x.id ? 'active' : ''}" style="--c:${esc(x.color)}"><i class="sp-dot"></i><span>${esc(x.name)}</span></a>`).join('')}</div>` : '')).join('')}</nav>
       <div class="sidebar-foot">
-        <a class="me side-link ${this.cur === 'profile' ? 'active' : ''}" href="#/profile">${Profile.avatar()}<div class="grow"><b class="ellipsis">${esc(name)}</b><small>Net worth ${money(nw, { compact: true })}</small></div>${I('settings', 16)}</a>
+        <a class="me side-link ${this.cur === 'profile' ? 'active' : ''}" href="#/profile">${Profile.avatar()}<div class="grow"><b class="ellipsis">${esc(name)}</b><small>${typeof Cloud !== 'undefined' ? Cloud.badge() : ''}</small></div>${I('settings', 16)}</a>
       </div>`;
-    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect', 'journal', 'vision'];
+    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect', 'journal', 'vision', 'review'];
     $('#tabbar').innerHTML = TABS.map(([id, label, icon]) => {
       const active = id === 'more' ? moreIds.includes(this.cur) : this.cur === id || (id === 'spaces' && this.cur === 'space');
       return id === 'more'
@@ -621,7 +624,7 @@ const App = {
     Theme.apply();
   },
   more() {
-    const tiles = [['vision', 'Vision', 'compass'], ['journal', 'Journal', 'book'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
+    const tiles = [['vision', 'Vision', 'compass'], ['journal', 'Journal', 'book'], ['review', 'Week review', 'layers'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
     UI.modal({
       title: 'More', body: `<div class="tiles">${tiles.map(([id, l, ic]) => `<a class="tile" href="#/${id}">${I(ic, 24)}${l}</a>`).join('')}</div>
         <div class="row mt"><button class="btn block" onclick="Theme.toggle()">${I(Theme.resolved() === 'dark' ? 'sun' : 'moon', 16)}Switch to ${Theme.resolved() === 'dark' ? 'light' : 'dark'} mode</button></div>`,

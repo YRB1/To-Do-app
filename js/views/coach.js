@@ -112,6 +112,11 @@ const Coach = {
     });
     const je = (d.journal || []).find(e => e.date === t0);
     if (h >= 20 && !Journal.hasContent(je)) add({ id: 'journal', to: 'journal', area: 'Mindset', priority: Journal.streak() >= 2 ? 'high' : 'low', icon: 'book', title: Journal.streak() >= 2 ? `Keep your ${Journal.streak()}-day journal streak` : 'Write tonight’s journal', detail: 'Two minutes: your wins, one lesson, and tomorrow’s top 3.' });
+    if (!Cloud.on()) add({ id: 'sync', to: 'connect', area: 'Mindset', priority: 'med', icon: 'refresh', title: 'Turn on sync and phone notifications', detail: 'Same data on phone and laptop, and reminders that arrive with the app closed. One sign-in per device.' });
+    else if (!Cloud.pushOn()) add({ id: 'push', to: 'connect', area: 'Mindset', priority: 'low', icon: 'bell', title: 'Turn on phone notifications', detail: 'Your routine reminders will arrive even when the app is closed.', go: ['Turn on', 'Cloud.enablePush()'] });
+    const wd = new Date().getDay(), lastWk = addDays(Review.wk(), -7);
+    if (wd === 0 && h >= 9 && !Review.reviewed()) add({ id: 'review', to: 'review', area: 'Mindset', priority: 'high', icon: 'layers', title: 'Do your weekly review', detail: 'Ten minutes: what worked, what didn’t, and next week’s top 3.' });
+    else if (wd === 1 && !Review.reviewed(lastWk)) add({ id: 'review_l', to: 'review/' + lastWk, area: 'Mindset', priority: 'high', icon: 'layers', title: 'Review last week before you start', detail: 'Set this week’s top 3 so every day has a direction.' });
     if (h >= 5 && h < 13 && !DayPlan.planned()) add({ id: 'plan', to: 'dashboard', area: 'Tasks', priority: 'high', icon: 'sun', title: 'Plan today (2 minutes)', detail: 'Carry over what’s unfinished, pick your top 3, check the load.', go: ['Plan today', 'DayPlan.plan()'] });
     if (h >= 21 && !DayPlan.shut()) add({ id: 'shut', to: 'dashboard', area: 'Tasks', priority: 'med', icon: 'moon', title: 'Shut down the day', detail: 'Move what’s left to tomorrow and write down your wins.', go: ['Shut down', 'DayPlan.shutdown()'] });
     const y = addDays(t0, -1), missed2 = d.habits.filter(hb => !hb.days[y] && !hb.days[t0] && Object.keys(hb.days).some(k => k < y));

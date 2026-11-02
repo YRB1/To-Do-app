@@ -33,14 +33,20 @@ const Notify = {
 };
 
 function checkReminders() {
-  const now = Date.now();
+  const now = Date.now(), fresh = [];
   let changed = false;
   for (const t of Store.d.tasks) {
     if (t.reminder && !t.done && !t.reminderFired && t.reminder <= now) {
       t.reminderFired = true; changed = true;
-      Notify.show('⏰ ' + t.text, (t.due ? 'Due ' + relDate(t.due) + (t.time ? ' at ' + fmtTime(t.time) : '') : 'Reminder') + ' · tap to open', 'tasks/' + t.id);
-      UI.toast(`${I('bell', 16)} ${esc(t.text)}`, '', 'tasks/' + t.id);
+      if (now - t.reminder < 30 * 60e3) fresh.push(t); // older ones are marked quietly — no pile of pop-ups on open
     }
+  }
+  if (fresh.length === 1) {
+    const t = fresh[0];
+    if (!(typeof Cloud !== 'undefined' && Cloud.pushOn())) Notify.show(t.text, (t.time ? fmtTime(t.time) + ' · ' : '') + 'tap to open', 'tasks/' + t.id);
+    UI.toast(`${I('bell', 16)} ${esc(t.text)}`, '', 'tasks/' + t.id);
+  } else if (fresh.length > 1) {
+    UI.toast(`${I('bell', 16)} ${fresh.length} reminders: ${esc(fresh.map(t => t.text).join(', ').slice(0, 80))}`, '', 'dashboard');
   }
   if (changed) App.refresh();
 }

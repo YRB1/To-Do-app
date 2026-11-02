@@ -52,6 +52,12 @@ Set these up under **Profile → Integrations**. Each one has step-by-step instr
 - **Claude coach.** Paste a Claude API key from platform.claude.com to get personal coaching based on your data. The key stays on your device.
 - **FX Replay.** Launch sessions, link each backtest session to its FX Replay URL, and import the CSV export.
 
+## Sync and phone notifications
+
+Sign in under **Connections → Sync & phone notifications** on each device. Data syncs through Supabase (project `yrb-nova`, tables `world_state`, `world_reminders`, `world_push_subs`, all row-level secured to your own user). API keys for Claude, GitHub and Apple stay on each device and are never uploaded.
+
+Phone notifications use Web Push: the app uploads the next 7 days of reminders, and the `world-push` edge function (run every minute by `pg_cron`) sends whatever is due. On iPhone this works from the Home Screen app (iOS 16.4+).
+
 ## Your data
 
 Everything is stored locally on each device in `localStorage`, with screenshots in IndexedDB. Nothing is sent to a server. To move data between devices, use **Profile → Data → Download backup / Restore backup**. Tasks from the previous version of this app are migrated automatically.
