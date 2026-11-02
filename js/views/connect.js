@@ -265,6 +265,7 @@ const Connect = {
     const g = GCal.connected() ? [true, 'Connected'] : GCal.configured() ? ['warn', 'Saved — tap connect'] : [false, 'Not set up'];
     const n = Notify.state();
     return `<div class="dash connect">
+      ${Cloud.card()}
       <div class="glass card s12 int-hero">
         <div class="int-card"><div class="int-ic claude">${I('sparkles', 22)}</div>
         <div class="grow">
