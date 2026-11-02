@@ -200,7 +200,7 @@ const Store = {
     this.d = raw ? this.normalize(raw) : seedData();
     const before = this.d.settings.yrbSeeded;
     ensureYrbBusinesses(this.d);
-    const hadSpaces = this.d.settings.spacesSeeded;
+    const hadSpaces = this.d.settings.spacesSeeded && this.d.settings.csRenamed;
     ensureSpaces(this.d);
     if (!raw || !before || !hadSpaces) this.save();
   },
