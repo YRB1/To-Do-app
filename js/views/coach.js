@@ -112,6 +112,10 @@ const Coach = {
     });
     const je = (d.journal || []).find(e => e.date === t0);
     if (h >= 20 && !Journal.hasContent(je)) add({ id: 'journal', to: 'journal', area: 'Mindset', priority: Journal.streak() >= 2 ? 'high' : 'low', icon: 'book', title: Journal.streak() >= 2 ? `Keep your ${Journal.streak()}-day journal streak` : 'Write tonight’s journal', detail: 'Two minutes: your wins, one lesson, and tomorrow’s top 3.' });
+    if (h >= 5 && h < 13 && !DayPlan.planned()) add({ id: 'plan', to: 'dashboard', area: 'Tasks', priority: 'high', icon: 'sun', title: 'Plan today (2 minutes)', detail: 'Carry over what’s unfinished, pick your top 3, check the load.', go: ['Plan today', 'DayPlan.plan()'] });
+    if (h >= 21 && !DayPlan.shut()) add({ id: 'shut', to: 'dashboard', area: 'Tasks', priority: 'med', icon: 'moon', title: 'Shut down the day', detail: 'Move what’s left to tomorrow and write down your wins.', go: ['Shut down', 'DayPlan.shutdown()'] });
+    const y = addDays(t0, -1), missed2 = d.habits.filter(hb => !hb.days[y] && !hb.days[t0] && Object.keys(hb.days).some(k => k < y));
+    if (missed2.length && h >= 12) add({ id: 'twice', to: 'habits', area: 'Habits', priority: 'high', icon: 'flame', title: `Don’t miss twice: ${missed2.map(x => x.name).join(', ')}`, detail: 'Missing one day barely matters. Missing two starts a new pattern. Do it today, even a small version.' });
     const keyHabits = d.habits.filter(hb => /pray|bible|read 30|code/i.test(hb.name) && !hb.days[t0]);
     if (h >= 18 && keyHabits.length) add({ id: 'habits_left', to: 'habits', area: 'Habits', priority: 'med', icon: 'flame', title: `Still to do today: ${keyHabits.map(x => x.name).join(', ')}`, detail: 'No wasted days. Tick them off before bed.' });
     d.goals.filter(g => !g.deadline && Goals.progress(g) < 1 && /driving test|scirocco/i.test(g.title)).forEach(g => add({ id: 'dl_' + g.id, to: 'goals/' + g.id, area: 'Goals', priority: 'med', icon: 'clock', title: `Set a deadline for “${g.title}”`, detail: 'A goal without a deadline is a fantasy. Pick the date.' }));
