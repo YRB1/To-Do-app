@@ -55,9 +55,10 @@ const Lock = {
     const u = new SpeechSynthesisUtterance(text);
     const v = this.voice(); try { if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-GB'; } catch { u.lang = 'en-GB'; }
     u.rate = rate; u.pitch = pitch; u.onstart = onstart; u.onend = onend; u.onerror = onend;
-    speechSynthesis.speak(u);
+    speechSynthesis.speak(u); return u;
   },
-  testVoice() { if (!('speechSynthesis' in window)) return UI.toast('This browser has no voices'); speechSynthesis.cancel(); this.session(); ['Y', 'R', 'B'].forEach(l => this.say(l, { rate: 0.85 })); this.say(`Welcome, ${this.first()}`); },
+  testVoice() { if (!('speechSynthesis' in window)) return UI.toast('This browser has no voices'); speechSynthesis.cancel(); this.session(); this.say(this.LINE, { rate: 0.9 }); },
+  LINE: 'Welcome, y r b',
 
   // ── Screen ──
   el() { return $('#lockScreen'); },
@@ -86,7 +87,7 @@ const Lock = {
         </div>
         <div class="ls-show">
           <div class="ls-yrb" aria-label="YRB">${['Y', 'R', 'B'].map((l, i) => `<span class="ls-l" style="--i:${i}"><b>${l}</b><em class="ls-rung"></em></span>`).join('')}</div>
-          <h1 class="ls-title">Welcome, ${this.name()}</h1>
+          <h1 class="ls-title">Welcome, Y·R·B</h1>
           <p class="ls-sub">${fmtDay(today(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
         </div>
       </div>`;
@@ -116,8 +117,12 @@ const Lock = {
       speechSynthesis.cancel();
       let started = false, fell = false;
       const fallback = () => { if (started || fell) return; fell = true; speechSynthesis.cancel(); letters.forEach((x, i) => setTimeout(() => land(i), i * 320)); setTimeout(() => el.classList.add('greet'), 1000); finish(2600); };
-      ['Y', 'R', 'B'].forEach((l, i) => this.say(l, { rate: 0.85, onstart: () => { if (fell) return; started = true; land(i); } }));
-      this.say(`Welcome, ${this.first()}`, { rate: 0.92, onstart: () => { if (fell) return; started = true; letters.forEach(x => x.classList.add('go')); el.classList.add('greet'); }, onend: () => started ? finish(500) : fallback() });
+      // One natural line, "Welcome, y r b" (lowercase so iOS never says "capital"); letters land as each is said
+      const at = [9, 11, 13], t = [];
+      const u = this.say(this.LINE, { rate: 0.9,
+        onstart: () => { if (fell) return; started = true; el.classList.add('greet'); [620, 900, 1180].forEach((ms, i) => t.push(setTimeout(() => land(i), ms))); },
+        onend: () => { [0, 1, 2].forEach(land); started ? finish(900) : fallback(); } });
+      if (u) u.onboundary = e => { const i = at.indexOf(e.charIndex); if (i > -1) land(i); };
       setTimeout(fallback, 1300); // no voice on this device → letters land on a beat instead
       return;
     }
@@ -199,7 +204,7 @@ const Lock = {
       ${this.hasPin() && window.PublicKeyCredential ? `<div class="li"><div class="li-b"><div class="li-t">Face ID</div><div class="li-s">${this.bioOn() ? 'On for this device' : 'Unlock with your face instead of typing the PIN'}</div></div>${this.bioOn() ? `<button class="btn sm ghost" onclick="localStorage.removeItem('yrb_bio');App.render()">Turn off</button>` : `<button class="btn sm" onclick="Lock.bioSetup()">Turn on</button>`}</div>` : ''}
       <div class="li"><div class="li-b"><div class="li-t">Welcome sound</div><div class="li-s">Plays as Y · R · B land</div></div>
         <div class="seg btns">${[['voice', 'Voice'], ['chime', 'Chime'], ['off', 'Off']].map(([v, l]) => `<button class="${this.mode() === v ? 'on' : ''}" onclick="Store.s.welcomeSound='${v}';Store.save();App.render();${v === 'voice' ? 'Lock.testVoice()' : v === 'chime' ? 'Lock.playChime().catch(()=>{})' : ''}">${l}</button>`).join('')}</div></div>
-      ${this.mode() === 'voice' ? `<div class="li" style="flex-wrap:wrap"><div class="li-b"><div class="li-t">Voice</div><div class="li-s">Says “Y… R… B… Welcome, ${this.name()}”</div></div>
+      ${this.mode() === 'voice' ? `<div class="li" style="flex-wrap:wrap"><div class="li-b"><div class="li-t">Voice</div><div class="li-s">Says “Welcome, Y. R. B.”</div></div>
         <select class="input sm" style="width:auto;max-width:230px" onchange="Store.s.voiceName=this.value;Store.save();Lock.testVoice()">${this.voices().map(v => `<option value="${esc(v.name)}" ${this.voice()?.name === v.name ? 'selected' : ''}>${esc(v.name)}${/premium|enhanced|neural|natural/i.test(v.name) ? ' ★' : ''}</option>`).join('') || '<option>Loading voices…</option>'}</select>
         <button class="btn sm" onclick="Lock.testVoice()">${I('play', 13)}Test</button></div>
       <p class="hint" style="padding:0 4px 4px">For the most human voice on iPhone: Settings → Accessibility → Spoken Content → Voices → English → pick a <b>Premium</b> or <b>Enhanced</b> voice (Jamie, Serena or Daniel sound best) and download it. It then appears here with a ★ and is chosen automatically.</p>` : ''}
