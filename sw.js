@@ -1,8 +1,8 @@
 /* YRB’s World service worker — offline app shell. Bump VERSION on every deploy. */
-const VERSION = 'yrb-v3.1.1';
+const VERSION = 'yrb-v3.3.0';
 const SHELL = [
   './', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/core.js', 'js/integrations.js', 'js/cloud.js', 'js/app.js',
+  'js/core.js', 'js/integrations.js', 'js/cloud.js', 'js/lock.js', 'js/app.js',
   'js/views/tasks.js', 'js/views/calendar.js', 'js/views/goals.js', 'js/views/business.js',
   'js/views/trading.js', 'js/views/wealth.js', 'js/views/habits.js', 'js/views/dashboard.js', 'js/views/profile.js', 'js/views/music.js', 'js/views/coach.js',
   'js/views/spaces.js', 'js/views/connect.js', 'js/views/journal.js', 'js/views/vision.js', 'js/views/review.js', 'js/palette.js', 'css/v2.css',
