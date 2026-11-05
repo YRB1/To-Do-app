@@ -4,6 +4,7 @@
 (function boot() {
   Store.load();
   Theme.apply();
+  Lock.init();
   GCal.init();
   Focus.load();
 

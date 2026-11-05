@@ -205,7 +205,7 @@ const Profile = {
 
   preferences() {
     const s = Store.s;
-    return `<div class="glass card"><form class="form" id="prefForm" onsubmit="return false">
+    return `${Lock.card()}<div class="glass card" style="margin-top:16px"><form class="form" id="prefForm" onsubmit="return false">
       <div class="form-sec">General</div>
       ${F({ name: 'defaultView', label: 'Open the app on', type: 'select', value: s.defaultView, options: [['dashboard', 'Dashboard'], ['tasks', 'Tasks'], ['calendar', 'Calendar'], ['trading', 'Trading journal'], ['goals', 'Goals']] })}
       ${F({ name: 'weekStart', label: 'Week starts on', type: 'select', value: s.weekStart, options: [[1, 'Monday'], [0, 'Sunday'], [6, 'Saturday']] })}

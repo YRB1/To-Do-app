@@ -131,7 +131,7 @@ const Trading = {
   title: 'Trading Journal',
   sub() { const s = tStats(Store.d.trades.filter(t => t.account !== 'backtest' && t.date.startsWith(monthKey()))); return `This month: <b class="${pnlCls(s.net)}">${money(s.net, { sign: true })}</b> · ${s.n} trade${s.n === 1 ? '' : 's'}`; },
   actions() {
-    return `<button class="btn hide-sm" onclick="Trading.importCSV()">${I('upload', 16)}Import</button>
+    return `<button class="btn" onclick="Trading.importCSV()" aria-label="Import CSV" title="Import CSV">${I('upload', 16)}<span class="hide-sm">Import CSV</span></button>
       <button class="btn primary" onclick="Trading.edit()">${I('plus', 16)}<span class="hide-sm">Log trade</span></button>`;
   },
   render(p) {
@@ -154,6 +154,7 @@ const Trading = {
         ${Store.d.accounts.length ? `<select class="input sm" style="width:auto" onchange="Trading.acctId=this.value;App.render()"><option value="">Any account</option>${Store.d.accounts.map(a => `<option value="${a.id}"${this.acctId === a.id ? ' selected' : ''}>${esc(a.name)}</option>`).join('')}</select>` : ''}
         ${setups.length ? `<select class="input sm" style="width:auto" onchange="Trading.setup=this.value;App.render()"><option value="">All strategies</option>${setups.map(x => `<option${this.setup === x ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>` : ''}
         <div class="pills">${[['30', '30D'], ['90', '90D'], ['ytd', 'YTD'], ['all', 'All']].map(([v, l]) => `<button class="pill ${this.range === v ? 'active' : ''}" onclick="Trading.range='${v}';App.render()">${l}</button>`).join('')}</div>
+        <button class="btn sm" onclick="Trading.importCSV()">${I('upload', 15)}Import CSV</button>
       </div></div>`;
     if (!ts.length) return filters + `<div class="glass card">${empty('candles', 'No trades in this view', 'Log a trade, import a CSV from your broker or FX Replay, or change the filters.', `<div class="row" style="justify-content:center"><button class="btn primary" onclick="Trading.edit()">${I('plus', 16)}Log trade</button><button class="btn" onclick="Trading.importCSV()">${I('upload', 16)}Import CSV</button></div>`)}</div>`;
 
@@ -262,6 +263,7 @@ const Trading = {
         ${bt ? `<button class="pill active" onclick="Trading.jbt='';App.render()">${esc(bt.name)} ${I('x', 13)}</button>` : ''}
         <div class="right">
           <div class="seg btns"><button class="${view === 'table' ? 'on' : ''}" title="Table" onclick="Store.s.tjView='table';Store.save();App.render()">${I('list', 16)}</button><button class="${view === 'gallery' ? 'on' : ''}" title="Gallery" onclick="Store.s.tjView='gallery';Store.save();App.render()">${I('grid', 16)}</button></div>
+          <button class="btn sm" onclick="Trading.importCSV()">${I('upload', 15)}Import CSV</button>
           <button class="btn sm" onclick="Trading.exportCSV()">${I('download', 15)}<span class="hide-sm">Export</span></button>
         </div>
       </div>
