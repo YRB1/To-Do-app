@@ -176,7 +176,7 @@ const Store = {
       version: 1,
       settings: {
         name: '', emoji: '', photo: '', motto: 'Discipline today, freedom tomorrow.', email: '',
-        theme: 'dark', accent: 'violet', glass: 'med', orbs: true,
+        theme: 'dark', accent: 'vault', glass: 'med', orbs: true,
         currency: 'GBP', weekStart: 1, defaultView: 'dashboard', taskView: 'list',
         gClientId: '', gCalendarId: 'primary',
         shortcutName: 'Add to Reminders',
@@ -387,13 +387,15 @@ const Theme = {
   apply() {
     const r = this.resolved(), h = document.documentElement;
     h.dataset.theme = r;
-    h.dataset.accent = Store.s.accent || 'violet';
+    const OLD = { violet: 'vault', gold: 'bullion', emerald: 'reserve', mint: 'reserve', forest: 'reserve', ocean: 'midnight', neon: 'arctic', rose: 'bordeaux', crimson: 'bordeaux', sunset: 'ember', onyx: 'graphite', platinum: 'graphite' };
+    if (!Store.s.accent || OLD[Store.s.accent]) Store.s.accent = OLD[Store.s.accent] || 'vault';
+    h.dataset.accent = Store.s.accent;
     h.dataset.glass = Store.s.glass || 'med';
     const black = Store.s.theme === 'black';
     if (black) h.dataset.black = '1'; else delete h.dataset.black;
     $('.bg') && ($('.bg').style.display = '');
     $$('.orb').forEach(o => o.style.display = Store.s.orbs ? '' : 'none');
-    const meta = $('meta[name=theme-color]'); if (meta) meta.content = black ? '#000000' : r === 'dark' ? '#03040b' : '#eef1f8';
+    const meta = $('meta[name=theme-color]'); if (meta) meta.content = black ? '#000000' : getComputedStyle(h).getPropertyValue('--bg-base').trim() || (r === 'dark' ? '#03040b' : '#eef1f8');
     try { localStorage.setItem('empire_theme', r); localStorage.setItem('empire_accent', h.dataset.accent); localStorage.setItem('empire_black', black ? '1' : ''); } catch {}
     const b = $('#themeBtn'); if (b) b.innerHTML = I(r === 'dark' ? 'sun' : 'moon');
   },

@@ -20,7 +20,7 @@
   try {
     var h = document.documentElement, t = localStorage.getItem('empire_theme');
     if (!t) t = 'dark';
-    h.dataset.theme = t; h.dataset.accent = localStorage.getItem('empire_accent') || 'violet';
+    h.dataset.theme = t; h.dataset.accent = ({ violet: 'vault', gold: 'bullion', emerald: 'reserve', mint: 'reserve', forest: 'reserve', ocean: 'midnight', neon: 'arctic', rose: 'bordeaux', crimson: 'bordeaux', sunset: 'ember', onyx: 'graphite', platinum: 'graphite' })[localStorage.getItem('empire_accent')] || localStorage.getItem('empire_accent') || 'vault';
     if (localStorage.getItem('empire_black')) h.dataset.black = '1';
   } catch (e) { document.documentElement.dataset.theme = 'dark'; }
 </script>
