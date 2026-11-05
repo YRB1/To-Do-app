@@ -48,7 +48,11 @@ const Lock = {
     const h = new Date().getHours(), part = h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
     el.className = 'lock-screen' + (firstOpen ? ' first' : '');
     el.innerHTML = `<div class="ls-inner">
-      <div class="ls-logo"><svg viewBox="104 96 304 330" fill="currentColor" aria-hidden="true"><path d="M118 104h78l60 104 60-104h78L292 268h-72z"/><rect x="220" y="262" width="22" height="160" rx="4"/><rect x="270" y="262" width="22" height="160" rx="4"/><rect x="220" y="300" width="72" height="16" rx="3"/><rect x="220" y="346" width="72" height="16" rx="3"/><rect x="220" y="392" width="72" height="16" rx="3"/></svg></div>
+      <div class="ls-dust" aria-hidden="true">${Array.from({ length: 18 }, (_, i) => `<i style="--x:${(i * 53) % 100}%;--d:${(i * 0.37) % 3.2}s;--s:${3 + (i % 5)}px;--t:${5 + (i % 4)}s"></i>`).join('')}</div>
+      <div class="ls-yrb" aria-label="YRB">
+        ${['Y', 'R', 'B'].map((l, i) => `<span class="ls-l" style="--i:${i}"><b>${l}</b><em class="ls-rung"></em></span>`).join('')}
+        <span class="ls-sweep" aria-hidden="true"></span>
+      </div>
       <h1 class="ls-title">Welcome, ${this.name()}</h1>
       <p class="ls-sub">${part} · ${fmtDay(today(), { weekday: 'long', day: 'numeric', month: 'long' })}</p>
       ${this.locked ? `
@@ -61,7 +65,8 @@ const Lock = {
         : `<div class="ls-bar"><i></i></div>`}
     </div>`;
     requestAnimationFrame(() => el.classList.add('on'));
-    if (!this.locked) setTimeout(() => this.open(), firstOpen ? 1500 : 900);
+    if (firstOpen && !this.locked) this.letterNotes();
+    if (!this.locked) setTimeout(() => this.open(true), firstOpen ? 3000 : 1500);
     else if (this.bioOn() && firstOpen) setTimeout(() => this.bio(true), 450);
   },
   prime() { // iPhone only allows sound that starts from a tap, so warm it up on the first key press
@@ -83,10 +88,23 @@ const Lock = {
     if (navigator.vibrate) navigator.vibrate(120);
     setTimeout(() => { d?.classList.remove('shake'); this.entry = ''; this.dots(); }, 450);
   },
-  open() {
+  // One soft note per letter as Y · R · B land (plays wherever the browser allows sound without a tap)
+  letterNotes() {
+    if ((Store.s.welcomeSound || 'chime') !== 'chime') return;
+    try {
+      const C = this.ctx || (this.ctx = new (window.AudioContext || window.webkitAudioContext)());
+      if (C.state !== 'running') { C.resume?.(); if (C.state !== 'running') return; }
+      const t0 = C.currentTime + 0.25, out = C.createGain(); out.gain.value = 0.14; out.connect(C.destination);
+      [783.99, 1174.66, 1567.98].forEach((f, i) => { const o = C.createOscillator(), g = C.createGain(), t = t0 + i * 0.32;
+        o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + 0.012); g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+        o.connect(g); g.connect(out); o.start(t); o.stop(t + 1.3); });
+      this._played = true;
+    } catch {}
+  },
+  open(auto) {
     const el = this.el(); if (!el) return;
     this.locked = false; document.body.classList.remove('is-locked');
-    this.chime();
+    if (!(auto && this._played)) this.chime();
     el.classList.add('out');
     setTimeout(() => el.remove(), 450);
   },
