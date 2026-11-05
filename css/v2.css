@@ -656,3 +656,7 @@ body.is-locked .app, body.is-locked .tabbar, body.is-locked .music-dock { visibi
 .ls-gate .ls-dots, .ls-gate .ls-msg, .ls-gate .ls-pad { animation: lsIn .5s .1s var(--ease) both; }
 .ls-gate .ls-enter { margin-top: 34px; }
 @media (prefers-reduced-motion: reduce) { .ls-l.go b, .ls-l.go .ls-rung::after, .ls-l.go::before, .lock-screen.greet .ls-title, .lock-screen.greet .ls-sub { animation-duration: .01s !important; animation-delay: 0s !important; } }
+/* "Welcome," shows first above the letters, as it's said */
+.ls-show .ls-sub { order: -2; margin-bottom: 4px; }
+.ls-show .ls-title { order: -1; margin: 0 0 4px !important; }
+.lock-screen.greet .ls-title, .lock-screen.greet .ls-sub { opacity: 1 !important; }
