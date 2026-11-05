@@ -6,7 +6,7 @@ const Cloud = {
   URL: 'https://zosahhhqcqpqmpwahkbs.supabase.co',
   KEY: 'sb_publishable_q4yoThCm0yuJolSMmzUe3g_Mml1A4ho',
   VAPID: 'BAx6tz16rOJi0WwFfYLZEtnYWAEitaPXErBh6HTSzhYu63PgTnZGeLFp45rT8RGbFduB5QwHDXbLxuTNLToiBbU',
-  LOCAL: ['claudeKey', 'claudePass', 'githubToken', 'appleDevToken'],
+  LOCAL: ['claudeKey', 'claudePass', 'githubToken', 'appleDevToken', 'voiceName'],
   s: null, meta: {}, applying: false, busy: false, status: 'off', err: '', _t: null,
 
   init() {
