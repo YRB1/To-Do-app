@@ -15,27 +15,51 @@ const Lock = {
   name() { return esc((Store.s.name || 'Yrb').split(' ')[0]); },
 
   // ── Sound: little two-note chime, or a spoken "Welcome, Yrb" ──────
-  ctx: null,
+  // iPhone rules: sound needs a tap first, and Web Audio is muted by the silent switch.
+  // So the chime is rendered into a real audio file and played through an <audio> element
+  // (media playback), with the audio session set to "playback".
+  _url: '', _a: null, _played: false, _primed: false,
+  wav() {
+    if (this._url) return this._url;
+    const sr = 44100, len = Math.floor(sr * 2.3), pcm = new Float32Array(len);
+    [[783.99, 0.25], [1174.66, 0.57], [1567.98, 0.89]].forEach(([f, start]) => { // G5 · D6 · G6 — one per letter
+      const s0 = Math.floor(start * sr);
+      for (let i = 0; s0 + i < len; i++) {
+        const t = i / sr, env = Math.min(1, t / 0.008) * Math.exp(-t * 3.2);
+        pcm[s0 + i] += env * (Math.sin(2 * Math.PI * f * t) + 0.25 * Math.sin(2 * Math.PI * f * 2 * t) + 0.08 * Math.sin(2 * Math.PI * f * 3 * t)) * 0.28;
+      }
+    });
+    const buf = new ArrayBuffer(44 + len * 2), v = new DataView(buf), w = (o, str) => [...str].forEach((c, i) => v.setUint8(o + i, c.charCodeAt(0)));
+    w(0, 'RIFF'); v.setUint32(4, 36 + len * 2, true); w(8, 'WAVE'); w(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, len * 2, true);
+    for (let i = 0; i < len; i++) v.setInt16(44 + i * 2, Math.max(-1, Math.min(1, pcm[i])) * 32767, true);
+    return (this._url = URL.createObjectURL(new Blob([buf], { type: 'audio/wav' })));
+  },
+  audio() {
+    if (!this._a) { this._a = new Audio(this.wav()); this._a.preload = 'auto'; this._a.setAttribute('playsinline', ''); }
+    return this._a;
+  },
+  session() { try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch {} },
+  // Call inside a tap: unlocks sound for later (PIN pad, Face ID)
+  prime() {
+    if (this._primed) return; this._primed = true; this.session();
+    const a = this.audio(); a.muted = true;
+    a.play().then(() => { a.pause(); a.currentTime = 0; a.muted = false; }).catch(() => { a.muted = false; this._primed = false; });
+    if (Store.s.welcomeSound === 'voice' && 'speechSynthesis' in window) speechSynthesis.speak(new SpeechSynthesisUtterance(''));
+  },
+  // Returns a promise: resolves if sound played, rejects if the phone blocked it
   chime() {
     const mode = Store.s.welcomeSound || 'chime';
-    if (mode === 'off') return;
+    if (mode === 'off') return Promise.resolve();
     if (mode === 'voice' && 'speechSynthesis' in window) {
       const u = new SpeechSynthesisUtterance(`Welcome, ${(Store.s.name || 'Yrb').split(' ')[0]}`);
-      u.lang = 'en-GB'; u.rate = 0.95; u.pitch = 1;
+      u.lang = 'en-GB'; u.rate = 0.95;
       const v = speechSynthesis.getVoices().find(x => /en-GB/i.test(x.lang)); if (v) u.voice = v;
-      speechSynthesis.cancel(); speechSynthesis.speak(u); return;
+      speechSynthesis.cancel(); speechSynthesis.speak(u); return Promise.resolve();
     }
-    try {
-      const C = this.ctx || (this.ctx = new (window.AudioContext || window.webkitAudioContext)());
-      if (C.state === 'suspended') C.resume();
-      const t = C.currentTime, out = C.createGain(); out.gain.value = 0.18; out.connect(C.destination);
-      [[783.99, 0], [1174.66, 0.12], [1567.98, 0.24]].forEach(([f, d]) => { // G5 · D6 · G6 — soft bell
-        const o = C.createOscillator(), g = C.createGain();
-        o.type = 'sine'; o.frequency.value = f;
-        g.gain.setValueAtTime(0, t + d); g.gain.linearRampToValueAtTime(1, t + d + 0.015); g.gain.exponentialRampToValueAtTime(0.001, t + d + 1.1);
-        o.connect(g); g.connect(out); o.start(t + d); o.stop(t + d + 1.2);
-      });
-    } catch {}
+    this.session();
+    const a = this.audio(); a.muted = false; a.volume = 1; a.currentTime = 0;
+    return a.play().then(() => { this._played = true; });
   },
 
   // ── Screen ────────────────────────────────────────────────────────
@@ -62,11 +86,16 @@ const Lock = {
           ${this.bioOn() ? `<button class="ls-alt" onclick="Lock.bio()" aria-label="Use Face ID">${I('user', 22)}</button>` : '<span></span>'}
           <button onclick="Lock.key('0')">0</button>
           <button class="ls-alt" onclick="Lock.back()" aria-label="Delete">${I('chevL', 22)}</button></div>`
-        : `<div class="ls-bar"><i></i></div>`}
+        : `<button class="ls-enter" id="lsEnter" onclick="Lock.tapEnter()" hidden>${I('play', 15)}Tap to enter</button>`}
     </div>`;
     requestAnimationFrame(() => el.classList.add('on'));
-    if (firstOpen && !this.locked) this.letterNotes();
-    if (!this.locked) setTimeout(() => this.open(true), firstOpen ? 3000 : 1500);
+    el.onclick = e => { const b = $('#lsEnter'); if (b && !b.hidden && !e.target.closest('.ls-enter')) this.tapEnter(); };
+    if (!this.locked) {
+      if (!firstOpen || (Store.s.welcomeSound || 'chime') === 'off') { setTimeout(() => this.open(true), firstOpen ? 3000 : 1200); return; }
+      // The chime's three notes line up with Y · R · B landing
+      this.chime().then(() => setTimeout(() => this.open(true), 2900))
+        .catch(() => setTimeout(() => { const b = $('#lsEnter'); if (b) b.hidden = false; }, 1500)); // phone blocked sound until a tap
+    }
     else if (this.bioOn() && firstOpen) setTimeout(() => this.bio(true), 450);
   },
   prime() { // iPhone only allows sound that starts from a tap, so warm it up on the first key press
@@ -88,23 +117,11 @@ const Lock = {
     if (navigator.vibrate) navigator.vibrate(120);
     setTimeout(() => { d?.classList.remove('shake'); this.entry = ''; this.dots(); }, 450);
   },
-  // One soft note per letter as Y · R · B land (plays wherever the browser allows sound without a tap)
-  letterNotes() {
-    if ((Store.s.welcomeSound || 'chime') !== 'chime') return;
-    try {
-      const C = this.ctx || (this.ctx = new (window.AudioContext || window.webkitAudioContext)());
-      if (C.state !== 'running') { C.resume?.(); if (C.state !== 'running') return; }
-      const t0 = C.currentTime + 0.25, out = C.createGain(); out.gain.value = 0.14; out.connect(C.destination);
-      [783.99, 1174.66, 1567.98].forEach((f, i) => { const o = C.createOscillator(), g = C.createGain(), t = t0 + i * 0.32;
-        o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + 0.012); g.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
-        o.connect(g); g.connect(out); o.start(t); o.stop(t + 1.3); });
-      this._played = true;
-    } catch {}
-  },
+  tapEnter() { this.prime(); this.chime().catch(() => {}); setTimeout(() => this.open(true), 350); },
   open(auto) {
     const el = this.el(); if (!el) return;
     this.locked = false; document.body.classList.remove('is-locked');
-    if (!(auto && this._played)) this.chime();
+    if (!auto) this.chime().catch(() => {});
     el.classList.add('out');
     setTimeout(() => el.remove(), 450);
   },
@@ -152,7 +169,7 @@ const Lock = {
         ${this.hasPin() ? `<button class="btn sm" onclick="Lock.setPin()">Change</button><button class="btn sm ghost danger" onclick="Lock.removePin()">Remove</button>` : `<button class="btn sm gold" onclick="Lock.setPin()">Set PIN</button>`}</div>
       ${this.hasPin() && window.PublicKeyCredential ? `<div class="li"><div class="li-b"><div class="li-t">Face ID</div><div class="li-s">${this.bioOn() ? 'On for this device' : 'Unlock with your face instead of typing the PIN'}</div></div>${this.bioOn() ? `<button class="btn sm ghost" onclick="localStorage.removeItem('yrb_bio');App.render()">Turn off</button>` : `<button class="btn sm" onclick="Lock.bioSetup()">Turn on</button>`}</div>` : ''}
       <div class="li"><div class="li-b"><div class="li-t">Welcome sound</div><div class="li-s">Plays when the app opens</div></div>
-        <div class="seg btns">${[['chime', 'Chime'], ['voice', '“Welcome, Yrb”'], ['off', 'Off']].map(([v, l]) => `<button class="${(s.welcomeSound || 'chime') === v ? 'on' : ''}" onclick="Store.s.welcomeSound='${v}';Store.save();App.render();Lock.chime()">${l}</button>`).join('')}</div></div>
+        <div class="seg btns">${[['chime', 'Chime'], ['voice', '“Welcome, Yrb”'], ['off', 'Off']].map(([v, l]) => `<button class="${(s.welcomeSound || 'chime') === v ? 'on' : ''}" onclick="Store.s.welcomeSound='${v}';Store.save();App.render();Lock.chime().catch(()=>{})">${l}</button>`).join('')}</div></div>
     </div>`;
   },
 

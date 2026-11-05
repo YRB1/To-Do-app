@@ -630,3 +630,7 @@ body.is-locked .app, body.is-locked .tabbar, body.is-locked .music-dock { visibi
 [data-theme="light"][data-accent] { --gold-grad: linear-gradient(135deg, color-mix(in srgb, var(--bullion) 45%, #fff), color-mix(in srgb, var(--bullion) 92%, #000)); }
 .btn.gold, .now-aff:not(.done) { color: color-mix(in srgb, var(--bullion) 18%, #120c02); }
 @media (max-width: 640px) { .theme-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } .theme-pv { height: 78px; } }
+.ls-enter { margin-top: 30px; display: inline-flex; align-items: center; gap: 8px; padding: 13px 24px; border-radius: 99px; border: 1px solid rgba(232,194,122,.45); background: rgba(232,194,122,.1); color: #f3d99c; font: 600 15px var(--font); cursor: pointer; animation: lsIn .5s var(--ease) both, enterPulse 2.2s .5s ease-in-out infinite; }
+.ls-enter[hidden] { display: none; }
+@keyframes enterPulse { 50% { box-shadow: 0 0 0 8px rgba(232,194,122,.08); } }
+.lock-screen.first:has(.ls-enter:not([hidden])) { cursor: pointer; }
