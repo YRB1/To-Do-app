@@ -393,10 +393,11 @@ const Theme = {
     h.dataset.glass = Store.s.glass || 'med';
     const black = Store.s.theme === 'black';
     if (black) h.dataset.black = '1'; else delete h.dataset.black;
+    if (Store.s.tint) h.dataset.tint = '1'; else delete h.dataset.tint;
     $('.bg') && ($('.bg').style.display = '');
     $$('.orb').forEach(o => o.style.display = Store.s.orbs ? '' : 'none');
     const meta = $('meta[name=theme-color]'); if (meta) meta.content = black ? '#000000' : getComputedStyle(h).getPropertyValue('--bg-base').trim() || (r === 'dark' ? '#03040b' : '#eef1f8');
-    try { localStorage.setItem('empire_theme', r); localStorage.setItem('empire_accent', h.dataset.accent); localStorage.setItem('empire_black', black ? '1' : ''); } catch {}
+    try { localStorage.setItem('empire_theme', r); localStorage.setItem('empire_accent', h.dataset.accent); localStorage.setItem('empire_black', black ? '1' : ''); localStorage.setItem('empire_tint', Store.s.tint ? '1' : ''); } catch {}
     const b = $('#themeBtn'); if (b) b.innerHTML = I(r === 'dark' ? 'sun' : 'moon');
   },
   set(k, v) { Store.s[k] = v; Store.save(); this.apply(); App.render(); },

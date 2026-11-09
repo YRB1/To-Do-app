@@ -2,14 +2,16 @@
 /* Profile — you, appearance (mode + colourways), integrations, preferences, data */
 
 const COLORWAYS = [
-  ['vault', 'Vault', 'Ink indigo, violet and gold', '#070816', '#5b45e0', '#8b6cff', '#5b45e0', '#e8c27a'],
-  ['bullion', 'Bullion', 'Black and 24-carat gold', '#0b0905', '#8a6420', '#e8c27a', '#b98a35', '#f0cf8a'],
-  ['reserve', 'Reserve', 'Private-bank green and brass', '#04100c', '#0f7a5c', '#3ecf9a', '#138a63', '#d4b06a'],
-  ['midnight', 'Midnight', 'Navy and silver', '#050a18', '#2c4fb8', '#7aa7ff', '#3d63d6', '#d8dee9'],
-  ['bordeaux', 'Bordeaux', 'Wine and rose gold', '#10050a', '#8e2545', '#e46b8a', '#a3274a', '#e8b49a'],
-  ['graphite', 'Graphite', 'Calm monochrome', '#0a0b0d', '#3a3f4b', '#e6e8ee', '#9aa0ad', '#d9c9a3'],
-  ['arctic', 'Arctic', 'Ice blue and steel', '#041018', '#1f8fb8', '#67d4f0', '#1f8fb8', '#e8c27a'],
-  ['ember', 'Ember', 'Smoked black and copper', '#0d0806', '#b4511f', '#f08a4b', '#c2531c', '#f2c38b'],
+  ['graphite', 'Onyx', 'Pure monochrome, white and silver', '#0b0b0d', '#3a3f4b', '#f5f5f7', '#a1a1a6', '#d9c9a3'],
+  ['bullion', 'Bullion', 'Black and 24-carat gold', '#0b0b0d', '#8a6420', '#e8c27a', '#b98a35', '#f0cf8a'],
+  ['racing', 'Racing', 'Motorsport red and silver', '#0b0b0d', '#c8102e', '#ff4655', '#c8102e', '#d8dee9'],
+  ['midnight', 'Cobalt', 'Electric blue and silver', '#0b0b0d', '#2c4fb8', '#7aa7ff', '#3d63d6', '#d8dee9'],
+  ['reserve', 'Reserve', 'Private-bank green and brass', '#0b0b0d', '#0f7a5c', '#3ecf9a', '#138a63', '#d4b06a'],
+  ['volt', 'Volt', 'Neon lime on black', '#0b0b0d', '#5f8f00', '#c6f432', '#8fc31f', '#e5e7eb'],
+  ['vault', 'Vault', 'Violet and gold', '#0b0b0d', '#5b45e0', '#8b6cff', '#5b45e0', '#e8c27a'],
+  ['bordeaux', 'Bordeaux', 'Wine and rose gold', '#0b0b0d', '#8e2545', '#e46b8a', '#a3274a', '#e8b49a'],
+  ['arctic', 'Arctic', 'Ice blue and steel', '#0b0b0d', '#1f8fb8', '#67d4f0', '#1f8fb8', '#e8c27a'],
+  ['ember', 'Ember', 'Copper and amber', '#0b0b0d', '#b4511f', '#f08a4b', '#c2531c', '#f2c38b'],
 ];
 const OLD_ACCENTS = { violet: 'vault', gold: 'bullion', emerald: 'reserve', mint: 'reserve', forest: 'reserve', ocean: 'midnight', neon: 'arctic', rose: 'bordeaux', crimson: 'bordeaux', sunset: 'ember', onyx: 'graphite', platinum: 'graphite' };
 const CURRENCIES = [['GBP', '£ British pound'], ['USD', '$ US dollar'], ['EUR', '€ Euro'], ['AUD', 'A$ Australian dollar'], ['CAD', 'C$ Canadian dollar'], ['AED', 'AED UAE dirham'], ['CHF', 'CHF Swiss franc'], ['JPY', '¥ Japanese yen'], ['ZAR', 'R South African rand'], ['NGN', '₦ Nigerian naira'], ['INR', '₹ Indian rupee']];
@@ -70,15 +72,16 @@ const Profile = {
 
   appearance() {
     const s = Store.s;
-    const modes = [['light', 'Light', 'sun', 'linear-gradient(160deg,#f6f7ff,#e3e6f7 50%,#f6efd9)', ''], ['dark', 'Dark', 'moon', 'linear-gradient(160deg,#03040b,#120e33 55%,#03140f)', 'dark'], ['black', 'Black', 'moon', '#000', 'dark'], ['system', 'Automatic', 'monitor', 'linear-gradient(90deg,#eef1fb 0 50%,#03040b 50% 100%)', 'dark']];
+    const modes = [['light', 'Light', 'sun', '#f5f5f7', ''], ['dark', 'Dark', 'moon', 'linear-gradient(160deg,#1c1c1f,#0b0b0d)', 'dark'], ['black', 'Black', 'moon', '#000', 'dark'], ['system', 'Automatic', 'monitor', 'linear-gradient(90deg,#f5f5f7 0 50%,#0b0b0d 50% 100%)', 'dark']];
     return `<div class="dash">
       <div class="glass card s12">
-        <div class="card-h"><h2>${I('sun')}Mode</h2><span class="sub">Light and Dark use a gradient · Black is pure OLED black</span></div>
+        <div class="card-h"><h2>${I('sun')}Mode</h2><span class="sub">Dark is neutral charcoal · Black is pure OLED black</span></div>
         <div class="mode-cards">${modes.map(([v, l, ic, bg, cls]) => `<button class="mode ${s.theme === v ? 'on' : ''}" onclick="Theme.set('theme','${v}')"><div class="pv ${cls}" style="background:${bg}"><i></i><i></i><i></i></div><b>${I(ic, 15)}${l}</b></button>`).join('')}</div>
       </div>
       <div class="glass card s12">
-        <div class="card-h"><h2>${I('palette')}Theme</h2><span class="sub">Background, accent and metal change together</span></div>
+        <div class="card-h"><h2>${I('palette')}Theme</h2><span class="sub">Accent and metal colour</span></div>
         <div class="theme-grid">${COLORWAYS.map(([v, l, sub, bg, g, a, a2, m]) => `<button class="theme-card ${s.accent === v ? 'on' : ''}" onclick="Theme.set('accent','${v}')" aria-pressed="${s.accent === v}"><div class="theme-pv" style="--bg:${bg};--g:${g};--a:${a};--a2:${a2};--m:${m}"><i class="p1"></i><i class="p2"></i><span class="num">£</span><i class="btnp"></i><i class="metal"></i></div><b>${l}</b><small>${sub}</small></button>`).join('')}</div>
+        <label class="switch-row mt"><input type="checkbox" ${s.tint ? 'checked' : ''} onchange="Theme.set('tint',this.checked)"><span class="sw"></span><span class="lbl">Tint the dark background with the theme colour</span></label>
       </div>
       <div class="glass card s6">
         <div class="card-h"><h2>${I('layers')}Glass</h2></div>
