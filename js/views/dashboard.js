@@ -135,7 +135,9 @@ const Focus = {
     }
   },
   todayMin() { return sum(Store.d.focus.filter(f => f.date === today()), f => f.min); },
+  mmss() { const x = this.left(); return `${pad(Math.floor(x / 60))}:${pad(x % 60)}`; },
   paint(full) {
+    const mini = $('#focusMini'); if (mini) mini.textContent = this.s.running ? this.mmss() : 'Focus';
     const el = $('#focusTime'); if (!el) return;
     const secs = this.left();
     el.textContent = `${pad(Math.floor(secs / 60))}:${pad(secs % 60)}`;
@@ -143,6 +145,7 @@ const Focus = {
     if (fg) { const c = +fg.getAttribute('stroke-dasharray'); fg.setAttribute('stroke-dashoffset', (c * (1 - (1 - secs / (this.s.len * 60)))).toFixed(2)); }
     if (full) { const w = $('#focusWidget'); if (w) w.outerHTML = this.widget(); }
   },
+  open() { UI.modal({ title: 'Focus timer', body: `<div id="focusModal">${this.widget()}</div>`, small: true, onClose: () => App.cur === 'dashboard' && App.render() }); },
   widget() {
     const s = this.s, secs = this.left();
     return `<div class="focus-wrap" id="focusWidget">
@@ -188,91 +191,45 @@ const Dashboard = {
     const installTip = !matchMedia('(display-mode: standalone)').matches && navigator.standalone !== true && /iPhone|iPad/.test(navigator.userAgent) && !localStorage.getItem('empire_installTip')
       ? `<div class="banner s12">${I('phone', 18)}<div class="grow"><b>Install on your iPhone:</b> tap the Share button in Safari, then <b>Add to Home Screen</b>. YRB’s World opens full-screen like a native app.</div><button class="btn ghost xs icon" onclick="localStorage.setItem('empire_installTip','1');App.render()">${I('x', 14)}</button></div>` : '';
 
-    return `<div class="dash">
+    const ins = Coach.insights().slice(0, 2);
+    const open = focus.filter(t => !t.done);
+    return `<div class="dash calm">
       ${sampleBanner}${installTip}
       <div class="now s12">
         <div class="now-time">
           <div class="now-clock" id="nowClock" aria-label="Current time">${DayClock.html()}</div>
-          <div class="now-day"><b>${fmtDay(t0, { weekday: 'long' })}</b><span>${fmtDay(t0, { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+          <div class="now-day"><b>${fmtDay(t0, { weekday: 'long' })}</b><span>${fmtDay(t0, { day: 'numeric', month: 'long' })}</span>
             <div class="now-bar"><i id="nowBar" style="width:${(DayClock.dayLeft().p * 100).toFixed(2)}%"></i></div><small id="nowLeft">${DayClock.dayLeft().txt}</small></div>
         </div>
         <button class="now-quote in" id="nowQuote" onclick="Quotes.next()" title="Tap for another quote">${Quotes.html(...Quotes.now())}</button>
         <div class="now-extra">
           <div id="nowRoutine">${Routine.pill()}</div>
-          <button class="now-aff ${Vision.saidToday() ? 'done' : ''}" onclick="Vision.read()">${I(Vision.saidToday() ? 'check' : 'sparkles', 16)}<span>${Vision.saidToday() ? 'Affirmations said today' : 'Say your affirmations'}</span>${Vision.affStreak() > 1 ? `<em>${I('flame', 12)}${Vision.affStreak()}</em>` : ''}</button>
-        </div>
-      </div>
-      <div class="s12 dash-spaces">
-        <div class="ds-h"><h2>${I('folder')}Sections</h2><a class="btn sm ghost" href="#/spaces">All ${I('arrowR', 14)}</a></div>
-        <div class="ds-row">${Spaces.list().filter(x => x.status !== 'Paused').map(x => { const nr = Spaces.nextRung(x), cd = Spaces.countdown(x), open = Spaces.tasks(x).filter(t => !t.done).length; return `<a class="ds-chip ${x.status === 'Focus' ? 'focus' : ''}" href="#/space/${x.id}" style="--c:${esc(x.color)}"><span class="sp-emoji">${esc(x.emoji || '•')}</span><span class="grow"><b class="ellipsis">${esc(x.name)}</b><small class="ellipsis">${nr ? esc(nr.text) : open + ' open tasks'}</small></span>${cd ? `<em class="${cd.cls}">${cd.txt}</em>` : ''}</a>`; }).join('')}</div>
-      </div>
-      <div class="glass card s7 tf-card">
-        <div class="card-h"><h2>${I('zap')}Today’s focus</h2><span class="sub">${focus.filter(t => !t.done).length} open · ${focus.filter(t => t.done).length} done</span><div class="right">${DayPlan.button()}</div></div>
-        <a class="tf-top3 ${top3.length ? '' : 'empty'}" href="#/journal">${top3.length ? `<small>Your top 3</small>${top3.map((x, i) => `<span><b>${i + 1}</b>${esc(x)}</span>`).join('')}` : `${I('edit', 14)}<span>Set today’s top 3 — the three things that make today a win</span>`}</a>
-        ${Review.weekTop3().length ? `<a class="tf-week" href="#/review"><small>This week</small>${Review.weekTop3().map(x => `<span>${esc(x)}</span>`).join('')}</a>` : ''}
-        ${rnow ? `<div class="tf-now">${I('clock', 14)}<span>Routine now: <b>${esc(rnow.cur.l)}</b></span></div>` : ''}
-        <div class="quick-add" style="border:1px solid var(--stroke-2);background:var(--field);margin-bottom:12px">${I('plus', 18)}<input id="dashQa" placeholder="Add for today… (try “Call bank 2pm !high”)" onkeydown="if(event.key==='Enter'){event.preventDefault();Dashboard.quick()}"><button class="btn primary sm" onclick="Dashboard.quick()">Add</button></div>
-        <div class="tf-list">${focus.length ? focus.slice(0, 14).map(t => (t === nowTask ? '<div class="tf-now-row">' : '') + Tasks.row(t) + (t === nowTask ? '</div>' : '')).join('') : empty('check', 'Today is clear', 'Nothing due. Pull something forward from your goals.')}</div>
-        ${focus.length > 14 ? `<a class="btn sm ghost block mt-s" href="#/tasks/f/today">${focus.length - 14} more today ${I('arrowR', 14)}</a>` : ''}
-      </div>
-      <div class="glass card s5">
-        <div class="card-h"><h2>${I('bell')}Reminders</h2><div class="right"><a class="btn sm ghost" href="#/coach">All ${I('arrowR', 14)}</a></div></div>
-        ${(() => { const ins = Coach.insights().slice(0, 4); return ins.length ? ins.map((s, i) => Coach.sugHTML(s, i, 'rule')).join('') : '<p class="faint" style="font-size:13px">Nothing needs you right now.</p>'; })()}
-      </div>
-
-      <div class="glass card s7">
-        <div class="card-h"><h2>${I('calendar')}Next 7 days</h2><div class="right"><a class="btn sm ghost" href="#/calendar">Calendar ${I('arrowR', 14)}</a></div></div>
-        ${upcoming.length ? upcoming.slice(0, 5).map(([ds, ts, evs]) => `<div class="agenda-day">${relDate(ds)} · ${fmtDay(ds, { day: 'numeric', month: 'short' })}</div>
-          ${evs.map(e => `<a class="ev-row" href="${esc(safeUrl(e.link))}" target="_blank" rel="noopener"><span class="t">${e.time ? fmtTime(e.time) : 'All day'}</span><span class="n">${esc(e.title)}</span></a>`).join('')}
-          ${ts.slice(0, 3).map(t => Tasks.row(t)).join('')}`).join('') : `<p class="faint" style="font-size:13px">Nothing scheduled this week.${GCal.configured() ? '' : ' <a href="#/profile/integrations">Connect Google Calendar</a> to see your events here.'}</p>`}
-      </div>
-
-      <div class="glass card s5">${Focus.widget()}</div>
-      <div class="glass card s4">
-        <div class="card-h"><h2>${I('target')}Goals</h2><div class="right"><a class="btn sm ghost" href="#/goals">${I('arrowR', 14)}</a></div></div>
-        ${activeGoals.slice(0, 4).map(g => { const p = Goals.progress(g), pc = Goals.pace(g); return `<div class="li click" onclick="App.go('goals/${g.id}')">${ring(p, 42, 5, (GOAL_CATS[g.cat] || {}).ring || '')}<div class="li-b"><div class="li-t">${esc(g.title)}</div><div class="li-s">${pc ? pc.label : g.cat}</div></div><div class="li-v">${pct(p)}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No active goals. <a href="javascript:Goals.edit()">Set one</a>.</p>`}
-      </div>
-      <div class="glass card s4">
-        <div class="card-h"><h2>${I('flame')}Habits</h2><span class="sub">${d.habits.filter(h => h.days[t0]).length}/${d.habits.length}</span><div class="right"><a class="btn sm ghost" href="#/habits">${I('arrowR', 14)}</a></div></div>
-        <div class="habit-chips">${d.habits.map(h => `<button class="hchip ${h.days[t0] ? 'on' : ''}" onclick="Habits.toggle('${h.id}')"><span class="hk">${I('check', 12, 3)}</span>${esc(h.emoji || '')} ${esc(h.name)}${Habits.streak(h) > 1 ? `<span class="streak" style="font-size:12px">${I('flame', 12)}${Habits.streak(h)}</span>` : ''}</button>`).join('') || `<p class="faint" style="font-size:13px">No habits yet. <a href="javascript:Habits.edit()">Add one</a>.</p>`}</div>
-      </div>
-
-      <div class="glass card s4">
-        <div class="card-h"><h2>${I('briefcase')}Businesses</h2><div class="right"><a class="btn sm ghost" href="#/business">${I('arrowR', 14)}</a></div></div>
-        ${d.businesses.slice(0, 5).map(b => { const p = b.target ? b.revenue / b.target : 0; return `<div class="li click" onclick="App.go('${(Store.d.spaces.find(x => x.bizId === b.id) ? 'space/' + Store.d.spaces.find(x => x.bizId === b.id).id : 'business/' + b.id)}')">${Business.av(b, 'sm')}<div class="li-b"><div class="li-t">${esc(b.name)}</div>${bar(p, 'gold thin')}</div><div class="li-v">${money(b.revenue, { compact: true })}</div></div>`; }).join('') || `<p class="faint" style="font-size:13px">No businesses yet. <a href="javascript:Business.edit()">Add one</a>.</p>`}
-      </div>
-      <div class="s12 kpis">
-        <a href="#/tasks" style="text-decoration:none;color:inherit">${kpi('Today', `${doneToday} / ${Math.max(todayAll.length, doneToday)}`, { icon: 'tasks', sub: bar(todayAll.length ? doneToday / todayAll.length : 0, 'green') })}</a>
-        <a href="#/business" style="text-decoration:none;color:inherit">${kpi('Business revenue', money(rev) + '<small class="faint" style="font-size:13px;font-weight:600"> /mo</small>', { icon: 'briefcase', tone: 'gold', sub: `${d.businesses.length} business${d.businesses.length === 1 ? '' : 'es'}` })}</a>
-        <a href="#/trading" style="text-decoration:none;color:inherit">${kpi('Trading this month', `<span class="${pnlCls(tm.net)}">${money(tm.net, { sign: true })}</span>`, { icon: 'candles', tone: tm.net >= 0 ? 'green' : 'red', sub: `${tm.n} trades · ${pct(tm.wr)} win rate` })}</a>
-        <a href="#/goals" style="text-decoration:none;color:inherit">${kpi('Goal progress', pct(gAvg), { icon: 'target', tone: 'blue', sub: `${activeGoals.length} active goals` })}</a>
-      </div>
-
-      <div class="glass card hero s6">
-        <div class="hero-grid">
-          <div>
-            <div class="eyebrow">${I('crown', 15)} Net worth</div>
-            <div class="big">${money(nw)}</div>
-            <div class="row wrap">${prev != null ? `<span class="delta">${I(nw >= prev ? 'up' : 'down', 14)}${money(nw - prev, { sign: true })}</span>` : ''}<span class="delta">${pct(Store.s.freedomNumber ? nw / Store.s.freedomNumber : 0, 1)} to freedom</span></div>
-
+          <div class="now-acts">
+            <button class="now-aff ${Vision.saidToday() ? 'done' : ''}" onclick="Vision.read()">${I(Vision.saidToday() ? 'check' : 'sparkles', 16)}<span>${Vision.saidToday() ? 'Affirmations done' : 'Affirmations'}</span>${Vision.affStreak() > 1 ? `<em>${I('flame', 12)}${Vision.affStreak()}</em>` : ''}</button>
+            <button class="btn now-focus" onclick="Focus.open()">${I('clock', 16)}<span id="focusMini">${Focus.s.running ? Focus.mmss() : 'Focus'}</span></button>
           </div>
-          <div>${Chart.area(hist.map(h => h.value), { h: 150, fmt: v => money(v, { compact: true }) })}</div>
         </div>
       </div>
-      <div class="glass card s6">${EndGoal.card(true)}</div>
-      ${d.trades.some(t => t.account !== 'backtest') ? '' : `<div class="glass card s6">
-        <div class="card-h"><h2>${I('candles')}Trading</h2><div class="right"><button class="btn sm primary" onclick="Trading.edit()">${I('plus', 14)}Log a trade</button></div></div>
-        <p class="faint" style="font-size:13.5px">No trades logged yet. Your sweep + FVG playbook is ready — log each trade and the stats build themselves.</p>
-        <div class="row wrap mt"><a class="btn sm" href="#/trading/playbook">${I('shield', 14)}Playbook</a><a class="btn sm ghost" href="#/trading/accounts">${I('wallet', 14)}Add your accounts</a></div>
-      </div>`}
-      <div class="glass card s6" ${d.trades.some(t => t.account !== 'backtest') ? '' : 'hidden'}>
-        <div class="card-h"><h2>${I('candles')}Trading — this month</h2><div class="right"><a class="btn sm" href="#/trading">${I('pie', 14)}Analytics</a><button class="btn sm primary" onclick="Trading.edit()">${I('plus', 14)}Trade</button></div></div>
-        ${Chart.area(tm.curve, { h: 130, cls: tm.net >= 0 ? 'green' : 'red', zero: true, fmt: v => money(v, { compact: true }) })}
-        <div class="stat-row mt"><div><small>Net</small><b class="${pnlCls(tm.net)}">${money(tm.net, { sign: true, compact: true })}</b></div><div><small>Win rate</small><b>${pct(tm.wr)}</b></div><div><small>Profit factor</small><b>${pfFmt(tm.pf)}</b></div></div>
+
+      <div class="glass card s12 tf-card">
+        <div class="card-h"><h2>${I('zap')}Today</h2><span class="sub">${open.length} open · ${doneToday} done</span><div class="right">${DayPlan.button()}</div></div>
+        <a class="tf-top3 ${top3.length ? '' : 'empty'}" href="#/journal">${top3.length ? `<small>Top 3</small>${top3.map((x, i) => `<span><b>${i + 1}</b>${esc(x)}</span>`).join('')}` : `${I('edit', 14)}<span>Set today’s top 3</span>`}</a>
+        <div class="quick-add">${I('plus', 18)}<input id="dashQa" placeholder="Add for today…" onkeydown="if(event.key==='Enter'){event.preventDefault();Dashboard.quick()}"><button class="btn primary sm" onclick="Dashboard.quick()">Add</button></div>
+        <div class="tf-list">${focus.length ? focus.slice(0, 5).map(t => (t === nowTask ? '<div class="tf-now-row">' : '') + Tasks.row(t) + (t === nowTask ? '</div>' : '')).join('') : empty('check', 'Today is clear', 'Nothing due.')}</div>
+        ${focus.length > 5 ? `<a class="btn sm ghost block mt-s" href="#/tasks/f/today">See all ${focus.length} ${I('arrowR', 14)}</a>` : ''}
+        ${d.habits.length ? `<div class="habit-chips calm-habits">${d.habits.map(h => `<button class="hchip ${h.days[t0] ? 'on' : ''}" onclick="Habits.toggle('${h.id}')"><span class="hk">${I('check', 12, 3)}</span>${esc(h.emoji || '')} ${esc(h.name)}</button>`).join('')}</div>` : ''}
       </div>
-      <div class="glass card s6">
-        <div class="card-h"><h2>${I('up')}Productivity</h2><span class="sub">${week} done this week ${lastWeek ? `· ${week >= lastWeek ? '+' : ''}${week - lastWeek} vs last` : ''}</span></div>
-        ${Chart.bars(prod, { h: 150, fmt: v => v + ' tasks' })}
+
+      ${ins.length ? `<div class="glass card s12">
+        <div class="card-h"><h2>${I('bell')}Needs you</h2><div class="right"><a class="btn sm ghost" href="#/coach">All ${I('arrowR', 14)}</a></div></div>
+        ${ins.map((x, i) => Coach.sugHTML(x, i, 'rule')).join('')}
+      </div>` : ''}
+
+      <div class="s12 glance">
+        <a href="#/goals"><small>Goals</small><b>${pct(gAvg)}</b></a>
+        <a href="#/business"><small>Revenue /mo</small><b>${money(rev, { compact: true })}</b></a>
+        <a href="#/trading"><small>Trading (month)</small><b class="${pnlCls(tm.net)}">${money(tm.net, { sign: true, compact: true })}</b></a>
+        <a href="#/wealth"><small>Net worth</small><b>${money(nw, { compact: true })}</b></a>
       </div>
     </div>`;
   },
