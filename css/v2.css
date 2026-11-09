@@ -692,3 +692,34 @@ body.is-locked .app, body.is-locked .tabbar, body.is-locked .music-dock { visibi
 /* Light mode: clean, no colour wash */
 [data-theme="light"]:not([data-tint="1"]) { --bg-base: #f5f5f7; --bg-grad: #f5f5f7; }
 .theme-pv { background: radial-gradient(120px 80px at 15% 0%, color-mix(in srgb, var(--g) 40%, transparent), transparent 70%), var(--bg); }
+
+/* ── v3.8 Calm home: one job per block, more air ── */
+.dash.calm { gap: 18px; }
+.calm .now { gap: 18px 28px; }
+.calm .now-quote p { font-size: clamp(15px, 1.5vw, 18px); font-weight: 550; line-height: 1.4; color: var(--text2); }
+.calm .now-quote span { margin-top: 4px; font-size: 12px; }
+.now-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.calm .now-aff { height: 40px; padding: 0 14px; font-size: 14px; }
+.now-focus { height: 40px; padding: 0 14px; font-variant-numeric: tabular-nums; }
+.calm .tf-card .quick-add { border: 1px solid var(--stroke-2); background: var(--field); margin: 0 0 10px; }
+.calm .tf-top3 { margin-bottom: 12px; }
+.calm-habits { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--stroke); }
+.glance { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.glance a { display: block; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--stroke); background: var(--glass); color: inherit; text-decoration: none; min-width: 0; }
+.glance small { display: block; font-size: 12px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.glance b { display: block; margin-top: 4px; font: 700 19px var(--display); letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) {
+  .calm .now { grid-template-columns: 1fr; padding: 0 2px; }
+  .calm .now-clock b { font-size: 58px; }
+  .calm .now-time { gap: 16px; }
+  .calm .now-quote { padding-left: 14px; }
+  .glance { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.calm .tf-list .tnotes, .calm .tf-list .tmeta .chip:not(.blue):not(.red) { display: none; }
+.calm .tf-list .task { padding-top: 10px; padding-bottom: 10px; }
+.calm .tf-list .tmeta:empty { display: none; }
+.calm-habits { display: flex; flex-wrap: wrap; gap: 6px; }
+.calm-habits .hchip { height: 34px; padding: 0 12px 0 8px; font-size: 13px; width: auto; }
+.calm .now-extra, .calm #nowRoutine { min-width: 0; max-width: 100%; }
+.calm .now-routine { min-width: 0; }
+.calm .now-routine .grow { min-width: 0; }
