@@ -566,6 +566,7 @@ const NAV = [
   { id: 'goals', label: 'Goals', icon: 'target' },
   { id: 'business', label: 'Businesses', icon: 'briefcase' },
   { id: 'habits', label: 'Habits', icon: 'flame' },
+  { id: 'neo', label: 'Neo · AI company', icon: 'zap' },
   { id: 'coach', label: 'Claude & coach', icon: 'sparkles' },
   { sec: 'Money' },
   { id: 'trading', label: 'Trading journal', icon: 'candles' },
@@ -606,7 +607,7 @@ const App = {
     const d = Store.d, t0 = today();
     const overdue = d.tasks.filter(t => !t.done && t.due && t.due < t0).length;
     const dueToday = d.tasks.filter(t => !t.done && t.due === t0).length;
-    const counts = { tasks: overdue ? [overdue, 'hot'] : dueToday ? [dueToday, ''] : null };
+    const counts = { tasks: overdue ? [overdue, 'hot'] : dueToday ? [dueToday, ''] : null, neo: typeof Neo !== 'undefined' && Neo.pending ? [Neo.pending, 'hot'] : null };
     const nw = Wealth.netWorth();
     const name = Store.s.name || 'Your Profile';
     $('#sidebar').innerHTML = `
@@ -617,7 +618,7 @@ const App = {
       <div class="sidebar-foot">
         <a class="me side-link ${this.cur === 'profile' ? 'active' : ''}" href="#/profile">${Profile.avatar()}<div class="grow"><b class="ellipsis">${esc(name)}</b><small>${typeof Cloud !== 'undefined' ? Cloud.badge() : ''}</small></div>${I('settings', 16)}</a>
       </div>`;
-    const moreIds = ['goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect', 'journal', 'vision', 'review'];
+    const moreIds = ['neo', 'goals', 'business', 'habits', 'wealth', 'profile', 'music', 'calendar', 'trading', 'connect', 'journal', 'vision', 'review'];
     $('#tabbar').innerHTML = TABS.map(([id, label, icon]) => {
       const active = id === 'more' ? moreIds.includes(this.cur) : this.cur === id || (id === 'spaces' && this.cur === 'space');
       return id === 'more'
@@ -627,7 +628,7 @@ const App = {
     Theme.apply();
   },
   more() {
-    const tiles = [['vision', 'Vision', 'compass'], ['journal', 'Journal', 'book'], ['review', 'Week review', 'layers'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
+    const tiles = [['neo', 'Neo · AI co.', 'zap'], ['vision', 'Vision', 'compass'], ['journal', 'Journal', 'book'], ['review', 'Week review', 'layers'], ['calendar', 'Calendar', 'calendar'], ['trading', 'Trading', 'candles'], ['goals', 'Goals', 'target'], ['business', 'Businesses', 'briefcase'], ['habits', 'Habits', 'flame'], ['wealth', 'Wealth', 'wallet'], ['music', 'Music', 'music'], ['connect', 'Connections', 'plug'], ['profile', 'Profile', 'user']];
     UI.modal({
       title: 'More', body: `<div class="tiles">${tiles.map(([id, l, ic]) => `<a class="tile" href="#/${id}">${I(ic, 24)}${l}</a>`).join('')}</div>
         <div class="row mt"><button class="btn block" onclick="Theme.toggle()">${I(Theme.resolved() === 'dark' ? 'sun' : 'moon', 16)}Switch to ${Theme.resolved() === 'dark' ? 'light' : 'dark'} mode</button></div>`,

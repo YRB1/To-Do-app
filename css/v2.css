@@ -723,3 +723,30 @@ body.is-locked .app, body.is-locked .tabbar, body.is-locked .music-dock { visibi
 .calm .now-extra, .calm #nowRoutine { min-width: 0; max-width: 100%; }
 .calm .now-routine { min-width: 0; }
 .calm .now-routine .grow { min-width: 0; }
+
+/* ── Neo HQ (AI company) ─────────────────────────────────── */
+.neo-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.neo-tabs a { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: 99px; font-size: 13.5px; font-weight: 600; text-decoration: none; color: var(--text2); border: 1px solid var(--stroke-2); background: var(--field); }
+.neo-tabs a.on { color: var(--on-a); background: var(--a-grad); border-color: transparent; }
+.neo-tabs .count { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 99px; background: color-mix(in srgb, var(--loss) 22%, transparent); color: var(--loss-t); }
+.neo-tabs a.on .count { background: rgba(255,255,255,.25); color: inherit; }
+.neo .rv-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.neo-warn { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.5; border-color: color-mix(in srgb, var(--warn) 40%, transparent) !important; }
+.neo-warn > .ic { color: var(--warn-t); flex-shrink: 0; margin-top: 2px; }
+.neo-ap, .neo-rep { border: 1px solid var(--stroke); border-radius: 14px; padding: 12px 14px; background: var(--field); }
+.neo-ap + .neo-ap, .neo-rep + .neo-rep { margin-top: 10px; }
+.neo-rep.unread { border-color: color-mix(in srgb, var(--a1) 45%, transparent); }
+.neo-ap-h { display: flex; gap: 10px; align-items: center; cursor: pointer; }
+.neo-ap-h > .ic { color: var(--text3); flex-shrink: 0; }
+.neo-sum { display: block; margin-top: 5px; font-size: 14.5px; line-height: 1.4; }
+.neo-payload { max-width: none !important; margin-top: 12px; max-height: 60vh; overflow-y: auto; white-space: normal; }
+.neo-ap-f { gap: 6px; margin-top: 12px; }
+.neo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.neo-agent { padding: 13px 14px; border-radius: 14px; border: 1px solid var(--stroke); background: var(--field); }
+.neo-agent.manager, .neo-agent.coo { border-color: color-mix(in srgb, var(--a1) 40%, transparent); }
+.neo-sched { display: flex; flex-direction: column; gap: 3px; margin-top: 10px; }
+.neo-sched small { display: flex; align-items: center; gap: 5px; color: var(--text2); font-size: 12.5px; }
+.neo-brain { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid var(--stroke); }
+.neo-brain:first-of-type { border-top: 0; padding-top: 0; }
+.neo-brain p { margin-top: 4px; font-size: 13.5px; line-height: 1.5; }
+@media (max-width: 640px) { .neo .rv-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .neo .rv-tile { padding: 11px 10px; } .neo .rv-tile b { font-size: 20px; } }
