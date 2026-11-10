@@ -750,3 +750,6 @@ body.is-locked .app, body.is-locked .tabbar, body.is-locked .music-dock { visibi
 .neo-brain:first-of-type { border-top: 0; padding-top: 0; }
 .neo-brain p { margin-top: 4px; font-size: 13.5px; line-height: 1.5; }
 @media (max-width: 640px) { .neo .rv-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; } .neo .rv-tile { padding: 11px 10px; } .neo .rv-tile b { font-size: 20px; } }
+.neo-funnel { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+.neo-stage { flex-shrink: 0; max-width: 130px; font-size: 12.5px; padding: 6px 8px; border-radius: 10px; background: var(--field); color: var(--text); border: 1px solid var(--stroke-2); }
+@media (max-width: 640px) { .neo-funnel { grid-template-columns: repeat(4, minmax(0, 1fr)); } .neo-funnel .rv-tile { padding: 10px; } .neo-funnel .rv-tile b { font-size: 19px; } }
