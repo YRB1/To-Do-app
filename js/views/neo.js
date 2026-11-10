@@ -6,7 +6,9 @@
 const Neo = {
   FN: 'https://zosahhhqcqpqmpwahkbs.supabase.co/functions/v1/neo',
   data: null, brain: null, acts: null, hist: null, msgs: null, busy: false, loading: false, err: '', pending: 0, open: {}, bizFilter: '',
-  TABS: [['', 'Today', 'home'], ['chat', 'Neo', 'message'], ['team', 'Team', 'user'], ['brain', 'Brain', 'database'], ['activity', 'Activity', 'layers']],
+  TABS: [['', 'Today', 'home'], ['pipeline', 'Pipeline', 'target'], ['chat', 'Neo', 'message'], ['team', 'Team', 'user'], ['brain', 'Brain', 'database'], ['activity', 'Activity', 'layers']],
+  leads: null, leadFilter: '',
+  STAGES: [['qualified', 'Qualified'], ['mockup_built', 'Mockup live'], ['contacted', 'Emailed'], ['followup_1', 'Follow-up 1'], ['followup_2', 'Follow-up 2'], ['replied', 'Replied'], ['call_booked', 'Call booked'], ['won', 'Won'], ['new', 'Not emailable'], ['lost', 'Lost'], ['do_not_contact', 'Do not contact']],
   BIZ: { 'yrb-nova': ['YRB Nova', 'blue'], yrbsupreme: ['YRBSUPREME', 'gold'], trading: ['Trading', 'green'] },
 
   async call(action, body = {}) {
@@ -23,6 +25,7 @@ const Neo = {
       if (what === 'brain') this.brain = (await this.call('brain')).items;
       if (what === 'activity') { this.acts = await this.call('tasks'); this.hist = (await this.call('history')).items; }
       if (what === 'chat') this.msgs = (await this.call('messages')).messages;
+      if (what === 'pipeline') this.leads = (await this.call('leads')).items;
       this.err = '';
     } catch (e) { this.err = e.message; }
     this.loading = false;
@@ -34,6 +37,8 @@ const Neo = {
     setTimeout(() => Cloud.on() && this.load('overview'), 1500);
   },
 
+  hermes() { return this.data?.settings?.engine === 'hermes'; },
+  lastEngineRun() { const t = (this.data?.agents || []).map(a => a.last_run_at).filter(Boolean).sort().pop(); return t || null; },
   agent(id) { return (this.data?.agents || []).find(a => a.id === id) || { id, name: id, title: '' }; },
   biz(id) { const b = this.BIZ[id]; return b ? chip(b[0], b[1]) : chip('Company', ''); },
   ago(t) { if (!t) return 'never'; const m = Math.round((Date.now() - new Date(t)) / 60000); return m < 1 ? 'just now' : m < 60 ? m + 'm ago' : m < 1440 ? Math.round(m / 60) + 'h ago' : Math.round(m / 1440) + 'd ago'; },
@@ -48,18 +53,21 @@ const Neo = {
   md(s) { return Claude.md(s); },
 
   title: 'Neo HQ',
-  sub() { const d = this.data; return d ? `${(d.agents || []).filter(a => a.active).length} agents · 3 businesses · $${(+d.spend_today_usd || 0).toFixed(2)} of $${d.settings?.daily_budget_usd} today` : 'Your autonomous company'; },
+  sub() { const d = this.data; return d ? `${(d.agents || []).filter(a => a.active).length} agents · 3 businesses${this.hermes() ? ' · engine on your PC' : ` · $${(+d.spend_today_usd || 0).toFixed(2)} of $${d.settings?.daily_budget_usd} today`}` : 'Your autonomous company'; },
   actions() { return `<button class="btn icon" onclick="Neo.refresh()" aria-label="Refresh" title="Refresh">${I('refresh', 16)}</button><button class="btn icon" onclick="Neo.settings()" aria-label="Settings" title="Settings">${I('settings', 16)}</button>`; },
-  refresh() { const t = App.params[0] || ''; this.load('overview'); if (t === 'brain') this.load('brain'); if (t === 'activity') this.load('activity'); if (t === 'chat') this.load('chat'); },
+  refresh() { const t = App.params[0] || ''; this.load('overview'); if (t === 'pipeline') this.load('pipeline'); if (t === 'brain') this.load('brain'); if (t === 'activity') this.load('activity'); if (t === 'chat') this.load('chat'); },
 
   render(p) {
     const tab = p[0] || '';
     const tabs = `<div class="s12 neo-tabs">${this.TABS.map(([id, l, ic]) => `<a href="#/neo${id ? '/' + id : ''}" class="${tab === id ? 'on' : ''}">${I(ic, 15)}${l}${id === '' && this.pending ? `<span class="count hot">${this.pending}</span>` : ''}</a>`).join('')}</div>`;
     if (!Cloud.on()) return `<div class="dash">${tabs}<div class="glass card s12"><div class="card-h"><h2>${I('zap')}Sign in to open Neo HQ</h2></div><p class="muted">Neo HQ uses the same sign-in as sync. Go to <a href="#/connect">Connections → Sync & phone notifications</a>, sign in, then come back. Turn on phone notifications there too so Neo can reach you.</p></div></div>`;
     if (!this.data) return `<div class="dash">${tabs}<div class="glass card s12">${this.err ? `<p class="neg">${esc(this.err)}</p><button class="btn mt" onclick="Neo.refresh()">Try again</button>` : '<p class="faint">Loading your company…</p>'}</div></div>`;
-    const warn = !this.data.settings?.api_key_set ? `<div class="glass card s12 neo-warn">${I('info', 18)}<div><b>Neo is built but asleep.</b> Add your Anthropic API key in Supabase → Edge Functions → Secrets as <code>ANTHROPIC_API_KEY</code>. The agents start on their next scheduled slot.</div></div>`
+    const last = this.lastEngineRun(), stale = !last || Date.now() - new Date(last) > 26 * 3600e3;
+    const warn = this.data.settings?.paused === 'true' ? `<div class="glass card s12 neo-warn">${I('pause', 18)}<div><b>Company paused.</b> No sending or publishing until you resume it in settings.</div></div>`
+      : this.hermes() && stale ? `<div class="glass card s12 neo-warn">${I('info', 18)}<div><b>Engine offline.</b> ${last ? `Last work ${this.ago(last)}.` : 'Your PC engine hasn’t checked in yet.'} Neo runs on your PC with Hermes: keep it on and online, and check <code>hermes cron status</code>. Setup guide: the neo-engine kit README.</div></div>`
+      : !this.hermes() && !this.data.settings?.api_key_set ? `<div class="glass card s12 neo-warn">${I('info', 18)}<div><b>Neo is built but asleep.</b> Add your Anthropic API key in Supabase → Edge Functions → Secrets as <code>ANTHROPIC_API_KEY</code>.</div></div>`
       : this.data.settings?.paused === 'true' ? `<div class="glass card s12 neo-warn">${I('pause', 18)}<div><b>Company paused.</b> No agent runs until you resume it in settings.</div></div>` : '';
-    const body = tab === 'chat' ? this.chatView() : tab === 'team' ? this.teamView() : tab === 'brain' ? this.brainView() : tab === 'activity' ? this.activityView() : this.todayView();
+    const body = tab === 'pipeline' ? this.pipelineView() : tab === 'chat' ? this.chatView() : tab === 'team' ? this.teamView() : tab === 'brain' ? this.brainView() : tab === 'activity' ? this.activityView() : this.todayView();
     return `<div class="dash neo">${tabs}${warn}${body}</div>`;
   },
   after(el, p) {
@@ -67,6 +75,9 @@ const Neo = {
     if (!this.data && !this.loading && Cloud.on() && !this.err) this.load('overview');
     if (tab === 'brain' && !this.brain && !this.loading) this.load('brain');
     if (tab === 'activity' && !this.acts && !this.loading) this.load('activity');
+    if (tab === 'pipeline' && !this.leads && !this.loading) this.load('pipeline');
+    clearInterval(this._chatPoll);
+    if (tab === 'chat' && this.waiting) this._chatPoll = setInterval(async () => { if (App.cur !== 'neo' || App.params[0] !== 'chat') return clearInterval(this._chatPoll); const n = (this.msgs || []).length; await this.load('chat'); if ((this.msgs || []).length > n && this.msgs[this.msgs.length - 1].role === 'assistant') { this.waiting = false; clearInterval(this._chatPoll); App.render(); } }, 30e3);
     if (tab === 'chat') { if (!this.msgs && !this.loading) this.load('chat'); const lg = $('#neoLog'); if (lg) lg.scrollTop = lg.scrollHeight; }
   },
 
@@ -79,7 +90,7 @@ const Neo = {
     return `<div class="s12 rv-tiles">
         ${tile('Needs you', aps.length, 'approvals waiting')}
         ${tile('Work today', todayTasks.filter(t => t.status === 'done').length, `${todayTasks.filter(t => t.status === 'running' || t.status === 'queued').length} in progress${todayTasks.some(t => t.status === 'failed') ? ` · ${todayTasks.filter(t => t.status === 'failed').length} failed` : ''}`)}
-        ${tile('AI spend', '$' + (+d.spend_today_usd || 0).toFixed(2), `cap $${d.settings?.daily_budget_usd}/day`)}
+        ${this.hermes() ? tile('Engine', this.lastEngineRun() ? this.ago(this.lastEngineRun()) : 'not yet', 'last work on your PC') : tile('AI spend', '$' + (+d.spend_today_usd || 0).toFixed(2), `cap $${d.settings?.daily_budget_usd}/day`)}
       </div>
       <div class="glass card s12">
         <div class="card-h"><h2>${I('check')}Waiting for your approval</h2></div>
@@ -87,7 +98,7 @@ const Neo = {
       </div>
       <div class="glass card s12">
         <div class="card-h"><h2>${I('bell')}Reports</h2><span class="sub">briefs, scorecards, alerts</span></div>
-        ${(d.reports || []).length ? d.reports.map(r => this.reportRow(r)).join('') : `<p class="faint" style="font-size:13.5px">Neo’s morning brief arrives at 06:45, Sterling’s gold brief at 06:30 on weekdays.</p>`}
+        ${(d.reports || []).length ? d.reports.map(r => this.reportRow(r)).join('') : `<p class="faint" style="font-size:13.5px">Neo’s morning brief arrives at 06:30, Sterling’s gold brief at 06:35 on weekdays.</p>`}
       </div>`;
   },
   approvalCard(a) {
@@ -137,16 +148,42 @@ const Neo = {
       footer: ['spacer', { label: 'Cancel', cls: 'ghost' }, { label: decision === 'revise' ? 'Send back' : 'Reject', cls: decision === 'revise' ? 'primary' : 'danger-solid', onClick: () => this.decide(id, decision, readForm($('#neoFb')).fb || '') }] });
   },
 
+  // ── Pipeline ─────────────────────────────────────────────
+  pipelineView() {
+    if (!this.leads) return `<div class="glass card s12"><p class="faint">Loading the pipeline…</p></div>`;
+    const L = this.leads.filter(l => !/engine test/.test(l.notes || ''));
+    const nova = L.filter(l => l.business_id !== 'yrbsupreme'), sup = L.filter(l => l.business_id === 'yrbsupreme');
+    const n = (arr, ...st) => arr.filter(l => st.includes(l.status)).length;
+    const touched = st => ['mockup_built', 'contacted', 'followup_1', 'followup_2', 'replied', 'call_booked', 'won', 'lost'].indexOf(st);
+    const funnel = [['Leads', nova.length], ['Emailable', nova.filter(l => l.status !== 'new' && l.status !== 'do_not_contact').length], ['Mockups', nova.filter(l => touched(l.status) >= 0 && l.mockup_url).length], ['Emailed', n(nova, 'contacted', 'followup_1', 'followup_2', 'replied', 'call_booked', 'won', 'lost')], ['Replied', n(nova, 'replied', 'call_booked', 'won')], ['Calls', n(nova, 'call_booked', 'won')], ['Won', n(nova, 'won')]];
+    const list = (this.leadFilter ? L.filter(l => l.status === this.leadFilter) : L).slice(0, 120);
+    const label = Object.fromEntries(this.STAGES);
+    const col = { won: 'green', replied: 'green', call_booked: 'green', lost: 'red', do_not_contact: 'red', new: '', qualified: 'blue', mockup_built: 'gold' };
+    return `<div class="s12 neo-funnel">${funnel.map(([k, v], i) => `<div class="rv-tile"><small>${k}</small><b>${v}</b>${i ? (funnel[i - 1][1] ? `<span>${Math.round(v / funnel[i - 1][1] * 100)}% of ${funnel[i - 1][0].toLowerCase()}</span>` : '') : '<span>YRB Nova</span>'}</div>`).join('')}</div>
+      ${sup.length ? `<p class="hint s12" style="margin:0">YRBSUPREME bulk buyers: ${sup.length} found · ${n(sup, 'contacted', 'followup_1', 'followup_2')} offered · ${n(sup, 'replied', 'won')} replied</p>` : ''}
+      <div class="s12 row wrap" style="gap:6px"><button class="btn sm ${!this.leadFilter ? 'primary' : 'ghost'}" onclick="Neo.leadFilter='';App.render()">All</button>${this.STAGES.filter(([k]) => L.some(l => l.status === k)).map(([k, l]) => `<button class="btn sm ${this.leadFilter === k ? 'primary' : 'ghost'}" onclick="Neo.leadFilter='${k}';App.render()">${l} ${n(L, k)}</button>`).join('')}</div>
+      <div class="glass card s12">${list.length ? list.map(l => `<div class="neo-brain"><div class="grow">
+          <div class="row wrap" style="gap:6px"><b>${esc(l.company)}</b>${chip(label[l.status] || l.status, col[l.status] || '')}${l.business_id === 'yrbsupreme' ? chip('YRBSUPREME', 'gold') : ''}<small class="faint">${esc([l.industry, l.city].filter(Boolean).join(' · '))} · ${this.ago(l.updated_at)}</small></div>
+          <p class="muted">${esc(l.problem || '')}${l.entity_type ? ` <small class="faint">(${esc(l.entity_type.replace('_', ' '))})</small>` : ''}</p>
+          <div class="row wrap" style="gap:8px;margin-top:4px">${l.mockup_url ? `<a class="btn xs" href="${esc(l.mockup_url)}" target="_blank" rel="noopener">${I('external', 12)}Mockup</a>` : ''}${l.website ? `<a class="btn xs ghost" href="${esc(/^https?:/.test(l.website) ? l.website : 'https://' + l.website)}" target="_blank" rel="noopener">Their site</a>` : ''}${l.email ? `<small class="faint">${esc(l.email)}</small>` : ''}</div>
+        </div><select class="neo-stage" onchange="Neo.setStage(${l.id}, this.value)">${this.STAGES.map(([k, lb]) => `<option value="${k}"${k === l.status ? ' selected' : ''}>${lb}</option>`).join('')}</select></div>`).join('') : `<p class="faint" style="font-size:13.5px">No leads yet. Scout fills this every weekday at 08:00 once your PC engine is running.</p>`}</div>`;
+  },
+  async setStage(id, status) {
+    try { await this.call('lead_update', { id, status }); const l = this.leads.find(x => x.id === id); if (l) l.status = status; UI.toast(`${I('check', 16)} Updated`, 'success'); App.render(); }
+    catch (e) { UI.toast(esc(e.message), 'error'); }
+  },
+
   // ── Chat ─────────────────────────────────────────────────
   chatView() {
     const m = this.msgs || [];
     const starters = ['Where are we at today?', 'What should I focus on right now?', 'Log it: I sent 30 cold emails today', 'Get Quill to write a post on missed calls costing dentists money'];
     return `<div class="glass card s12 chat-card">
-      <div class="card-h"><h2>${I('zap')}Neo</h2><span class="sub">COO · knows the brain, can assign work</span></div>
+      <div class="card-h"><h2>${I('zap')}Neo</h2><span class="sub">${this.hermes() ? 'runs on your PC · replies within 20 min' : 'COO · knows the brain, can assign work'}</span></div>
       <div class="chat-log" id="neoLog">
         ${m.length ? m.map(x => x.role === 'user' ? `<div class="msg me">${esc(x.content)}</div>` : `<div class="msg ai">${this.md(x.content)}</div>`).join('') : `<div class="chat-empty">${starters.map(s => `<span class="chip" onclick="Neo.send(${esc(JSON.stringify(s))})">${esc(s)}</span>`).join('')}</div>`}
-        ${this.busy ? `<div class="msg ai typing"><i></i><i></i><i></i></div>` : ''}
+        ${this.busy || this.waiting ? `<div class="msg ai typing"><i></i><i></i><i></i></div>` : ''}
       </div>
+      ${this.waiting ? `<p class="hint" style="margin:-4px 0 10px">Neo answers on his next inbox shift (within 20 minutes, 08:00–22:00). You’ll get a phone alert, so you can close the app.</p>` : ''}
       <div class="quick-add inset chat-in"><textarea id="neoIn" rows="1" placeholder="Talk to Neo — updates, decisions, new jobs…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();Neo.send()}"></textarea><button class="btn primary sm" onclick="Neo.send()" ${this.busy ? 'disabled' : ''}>${I('send', 14)}Send</button></div>
     </div>`;
   },
@@ -154,14 +191,14 @@ const Neo = {
     const inp = $('#neoIn'); text = (text ?? inp?.value ?? '').trim();
     if (!text || this.busy) return;
     (this.msgs ||= []).push({ role: 'user', content: text }); this.busy = true; App.render();
-    try { const j = await this.call('chat', { text }); this.msgs.push({ role: 'assistant', content: j.reply }); }
+    try { const j = await this.call('chat', { text }); if (j.queued) this.waiting = true; else this.msgs.push({ role: 'assistant', content: j.reply }); }
     catch (e) { this.msgs.push({ role: 'assistant', content: '⚠️ ' + e.message }); }
     this.busy = false; App.render(); this.load('overview');
   },
 
   // ── Team ─────────────────────────────────────────────────
   teamView() {
-    const d = this.data, ag = d.agents || [], sch = d.schedules || [];
+    const d = this.data, ag = (d.agents || []).filter(a => a.active), sch = d.schedules || [];
     const card = a => `<div class="neo-agent ${a.role}">
       <div class="row between"><div><b>${esc(a.name)}</b> <small class="faint">v${a.version}</small><br><small class="muted">${esc(a.title)}</small></div>${a.role === 'coo' ? chip('COO', 'gold', 'crown') : a.role === 'manager' ? chip('Manager', 'blue') : ''}</div>
       <div class="neo-sched">${sch.filter(s => s.agent_id === a.id && s.active).map(s => `<small>${I('clock', 12)} ${esc(this.cron(s.cron))} — ${esc(s.title)}</small>`).join('') || (a.id === 'nova-echo' ? `<small>${I('zap', 12)} Instantly, on every new enquiry or booking</small>` : '<small class="faint">On demand</small>')}</div>
@@ -169,6 +206,7 @@ const Neo = {
     </div>`;
     const group = (bid, label) => `<div class="glass card s12"><div class="card-h"><h2>${I('briefcase')}${label}</h2></div><div class="neo-grid">${ag.filter(a => a.business_id === bid).sort((a, b) => (a.role === 'manager' ? -1 : 1) - (b.role === 'manager' ? -1 : 1)).map(card).join('')}</div></div>`;
     return `<div class="glass card s12"><div class="card-h"><h2>${I('crown')}Chief Operating Officer</h2><span class="sub">runs the managers</span></div><div class="neo-grid">${ag.filter(a => a.role === 'coo').map(card).join('')}</div></div>
+      ${this.hermes() ? `<p class="hint s12" style="margin:0">Times are UK time on your PC. Change schedules with <code>hermes cron</code> or ask Neo.</p>` : ''}
       ${group('yrb-nova', 'YRB Nova + VoiceDesk')}${group('yrbsupreme', 'YRBSUPREME')}${group('trading', 'Trading Desk')}`;
   },
   showAgent(id) { const a = this.agent(id); UI.modal({ title: `${esc(a.name)} · ${esc(a.title)}`, body: `<div class="msg ai" style="max-width:none">${this.md(a.instructions || '')}</div><p class="hint">Neo proposes upgrades to these instructions after each weekly review — you approve them on Today.</p>` }); },
@@ -178,7 +216,7 @@ const Neo = {
       body: `<form class="form" id="neoRun" onsubmit="return false">${F({ name: 'brief', label: 'Brief (optional)', type: 'textarea', rows: 3, full: true, placeholder: 'Leave blank for their standard job' })}</form>`,
       footer: ['spacer', { label: 'Cancel', cls: 'ghost' }, { label: 'Run', cls: 'primary', onClick: async () => {
         const b = readForm($('#neoRun')).brief;
-        try { await this.call('run_agent', { agent_id: id, brief: b || undefined, title: b ? b.slice(0, 80) : undefined }); UI.toast(`${I('play', 16)} ${esc(a.name)} is on it — you’ll get a notification`, 'success'); } catch (e) { UI.toast(esc(e.message), 'error'); }
+        try { await this.call('run_agent', { agent_id: id, brief: b || undefined, title: b ? b.slice(0, 80) : undefined }); UI.toast(`${I('play', 16)} ${esc(a.name)} ${this.hermes() ? 'is queued — picked up on Neo’s next inbox shift (≤20 min)' : 'is on it — you’ll get a notification'}`, 'success'); } catch (e) { UI.toast(esc(e.message), 'error'); }
       } }] });
   },
 
@@ -227,14 +265,15 @@ const Neo = {
     const models = [['claude-haiku-5-5', 'Haiku 5.5 (cheapest)'], ['claude-sonnet-5-5', 'Sonnet 5.5 (balanced)'], ['claude-opus-5-5', 'Opus 5.5 (best)']];
     UI.modal({ title: 'Company settings', small: true,
       body: `<form class="form" id="neoSet" onsubmit="return false">
-        ${F({ name: 'daily_budget_usd', label: 'Daily AI budget (USD)', type: 'number', value: s.daily_budget_usd, hint: 'Agents stop for the day when this is reached.' })}
-        ${F({ name: 'model_coo', label: 'Neo’s model', type: 'select', value: s.model_coo, options: models })}
-        ${F({ name: 'model_worker', label: 'Managers & workers model', type: 'select', value: s.model_worker, options: models })}
+        ${F({ name: 'daily_send_cap', label: 'Max outreach emails per day', type: 'number', value: s.daily_send_cap || 20, hint: 'Hard limit enforced on your PC engine. Keep it low to protect your Gmail.' })}
+        ${this.hermes() ? '<p class="hint">AI spend is controlled by the credit limit on your OpenRouter key.</p>' : F({ name: 'daily_budget_usd', label: 'Daily AI budget (USD)', type: 'number', value: s.daily_budget_usd, hint: 'Agents stop for the day when this is reached.' })}
+        ${this.hermes() ? '' : F({ name: 'model_coo', label: 'Neo’s model', type: 'select', value: s.model_coo, options: models })}
+        ${this.hermes() ? '<p class="hint">Model: set on your PC with <code>hermes model</code>.</p>' : F({ name: 'model_worker', label: 'Managers & workers model', type: 'select', value: s.model_worker, options: models })}
         ${F({ name: 'paused', label: 'Pause the whole company', type: 'switch', value: s.paused === 'true', full: true })}</form>
         <button class="btn sm mt" onclick="Neo.call('test_push').then(()=>UI.toast('Test sent — check your phone','success'))">${I('bell', 14)}Send test notification</button>`,
       footer: ['spacer', { label: 'Cancel', cls: 'ghost' }, { label: 'Save', cls: 'primary', onClick: async () => {
         const o = readForm($('#neoSet'));
-        try { await this.call('settings', { daily_budget_usd: o.daily_budget_usd, model_coo: o.model_coo, model_worker: o.model_worker, paused: !!o.paused }); UI.toast(`${I('check', 16)} Saved`, 'success'); this.load('overview'); } catch (e) { UI.toast(esc(e.message), 'error'); }
+        try { await this.call('settings', { daily_send_cap: o.daily_send_cap, daily_budget_usd: o.daily_budget_usd ?? undefined, model_coo: o.model_coo, model_worker: o.model_worker, paused: !!o.paused }); UI.toast(`${I('check', 16)} Saved`, 'success'); this.load('overview'); } catch (e) { UI.toast(esc(e.message), 'error'); }
       } }] });
   },
 };
