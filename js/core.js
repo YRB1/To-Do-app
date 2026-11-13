@@ -200,13 +200,14 @@ const Store = {
     this.d = raw ? this.normalize(raw) : seedData();
     const before = this.d.settings.yrbSeeded;
     ensureYrbBusinesses(this.d);
-    const hadSpaces = this.d.settings.spacesSeeded && this.d.settings.csRenamed && this.d.settings.sp3 && this.d.settings.nwZero && this.d.settings.spTasks && this.d.settings.visionSeeded && this.d.settings.routineTasks && this.d.settings.cleanV1 && this.d.settings.proV1 && this.d.settings.gymV1;
+    const hadSpaces = this.d.settings.spacesSeeded && this.d.settings.csRenamed && this.d.settings.sp3 && this.d.settings.nwZero && this.d.settings.spTasks && this.d.settings.visionSeeded && this.d.settings.routineTasks && this.d.settings.cleanV1 && this.d.settings.proV1 && this.d.settings.gymV1 && this.d.settings.postingV1;
     ensureSpaces(this.d);
     ensureVision(this.d);
     ensureRoutineTasks(this.d);
     cleanUpV1(this.d);
     proV1(this.d);
     gymV1(this.d);
+    postingV1(this.d);
     // Start net worth from £0: drop the sample assets, income and history (anything you added stays)
     if (!this.d.settings.nwZero) {
       for (const k of ['assets', 'incomes', 'nwHistory']) this.d[k] = this.d[k].filter(x => !x.sample);

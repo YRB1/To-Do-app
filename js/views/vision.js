@@ -289,3 +289,36 @@ const Vision = {
   },
 };
 App.register('vision', Vision);
+
+// Instagram posting schedule (Nov 2026): one reminder every day, in the right Section, at the best times
+// from Instagram's October insights (Wed 6–9pm, Thu 3–6pm and 6–9pm). You post yourself; this just reminds you.
+function postingV1(d) {
+  if (d.settings.postingV1) return;
+  const sp = id => d.spaces.some(s => s.id === id) ? id : '';
+  const bizOf = id => d.spaces.find(s => s.id === id)?.bizId || '';
+  const steps = (...xs) => xs.map(text => ({ id: uid(), text, done: false }));
+  const NOVA = 'sp_nova', SUP = 'sp_supreme';
+  const novaSlides = steps('Open this week’s YRB Nova slideshow', 'Post to Instagram (and Facebook)', 'Caption ends with one action: “Comment AUDIT for a free site review”', 'Reply to every comment within the hour');
+  const supReel = steps('Pick a product you haven’t posted this week', 'POV hook on screen (e.g. “pov: your fit was mid until you added these”)', 'Caption: product + BLACKFRIDAY25 = 25% off till 30 Nov', 'Post to Instagram + TikTok', 'Reply to comments');
+  const S = [
+    // [text, day (0=Sun), time, space, notes, checklist]
+    ['📲 Post: YRB Nova slideshow', 1, '18:30', NOVA, 'Outcome first, price on screen, one clear action. Your VoiceDesk “Every call answered” post got 1K+ views in October — copy that style.', novaSlides],
+    ['📲 Post: YRBSUPREME reel', 1, '19:00', SUP, 'Your best October reel: POV caption + one bold piece on a dark background (iced skull pendant, 284 views).', supReel],
+    ['📲 Stories on both accounts (2–3 each)', 2, '18:30', NOVA, 'Quick and casual: a poll, a behind-the-scenes clip, re-share yesterday’s posts.', steps('YRB Nova: 2–3 stories (poll or demo clip)', 'YRBSUPREME: 2–3 stories (product close-up, sale code)')],
+    ['📲 Post: YRB Nova slideshow (best time 6–9pm)', 3, '18:30', NOVA, 'Wednesday 6–9pm is one of your best times.', novaSlides],
+    ['📲 Post: YRBSUPREME reel', 3, '19:30', SUP, 'Different product from Monday.', supReel],
+    ['📲 Post: YRB Nova slideshow (best time 3–6pm)', 4, '15:30', NOVA, 'Thursday 3–6pm is one of your best times.', novaSlides],
+    ['📲 Post: YRBSUPREME reel (best time 6–9pm)', 4, '18:30', SUP, 'Thursday 6–9pm is one of your best times.', supReel],
+    ['📲 Post: YRBSUPREME sale post', 5, '18:30', SUP, 'Carousel of 3–5 pieces with the live code. Check the code on the site first (BLACKFRIDAY25 until 30 Nov, then XMAS20 from 1 Dec).', steps('3–5 product photos in one carousel', 'Live sale code in the first slide and caption', 'Post to Instagram + Facebook')],
+    ['📲 Post: YRBSUPREME reel', 6, '12:00', SUP, 'Weekend reel: gift angle works well (“gift for him he’ll actually wear”).', supReel],
+    ['📲 Plan next week’s posts (both accounts)', 0, '18:00', NOVA, 'Check last week’s best post on each account, then line up 3 YRB Nova slideshows and 4 YRBSUPREME reels.', steps('Check last week’s top post on each account', 'Pick 4 different YRBSUPREME products', 'Pick 3 YRB Nova slideshow topics (one per service)', 'Ask Claude to make the week’s content')],
+  ];
+  const have = new Set(d.tasks.map(t => t.text.toLowerCase()));
+  for (const [text, dow, time, space, notes, sub] of S) {
+    if (have.has(text.toLowerCase())) continue;
+    const due = nextDow(dow), spaceId = sp(space);
+    d.tasks.push(normTask({ id: uid(), text, notes, due, time, repeat: 'weekly', spaceId, bizId: bizOf(spaceId), priority: 'high', cat: 'Content',
+      subtasks: sub.map(s => ({ ...s, id: uid() })), reminder: new Date(`${due}T${time}:00`).getTime() }));
+  }
+  d.settings.postingV1 = true;
+}

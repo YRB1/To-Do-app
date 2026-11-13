@@ -71,7 +71,7 @@ const Cloud = {
     this.applying = true;
     Store.d = Store.normalize(r.data);
     Object.assign(Store.d.settings, keep);
-    try { ensureSpaces(Store.d); ensureVision(Store.d); ensureRoutineTasks(Store.d); cleanUpV1(Store.d); proV1(Store.d); gymV1(Store.d); } catch {}
+    try { ensureSpaces(Store.d); ensureVision(Store.d); ensureRoutineTasks(Store.d); cleanUpV1(Store.d); proV1(Store.d); gymV1(Store.d); postingV1(Store.d); } catch {}
     Store.d._savedAt = +r.saved_at;
     try { localStorage.setItem(Store.KEY, JSON.stringify(Store.d)); } catch {}
     this.applying = false;
