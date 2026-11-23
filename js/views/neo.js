@@ -93,7 +93,7 @@ const Neo = {
         ${this.hermes() ? tile('Last run', this.lastEngineRun() ? this.ago(this.lastEngineRun()) : 'not yet', 'Pro runs 07:12 · 12:43 · 19:23') : tile('AI spend', '$' + (+d.spend_today_usd || 0).toFixed(2), `cap $${d.settings?.daily_budget_usd}/day`)}
       </div>
       <div class="glass card s12">
-        <div class="card-h"><h2>${I('check')}Waiting for your approval</h2></div>
+        <div class="card-h"><h2>${I('check')}Waiting for your approval</h2>${aps.length > 1 ? `<button class="btn sm primary" style="margin-left:auto" onclick="Neo.approveAll()" ${this.bulkBusy ? 'disabled' : ''}>${I('check', 14)}${this.bulkBusy ? 'Approving…' : `Approve all (${aps.length})`}</button>` : ''}</div>
         ${aps.length ? aps.map(a => this.approvalCard(a)).join('') : `<p class="faint" style="font-size:13.5px">All clear. New drafts land here and on your phone as agents finish them.</p>`}
       </div>
       <div class="glass card s12">
@@ -141,6 +141,17 @@ const Neo = {
       UI.toast(`${I('check', 16)} ${decision === 'approved' ? 'Approved' : decision === 'revise' ? 'Sent back for a revision — it’ll be back in a few minutes' : 'Rejected — the team will learn from it'}`, 'success');
       this.load('overview');
     } catch (e) { UI.toast(`${I('info', 16)} ${esc(e.message)}`, 'error'); }
+  },
+  approveAll() {
+    const aps = (this.data?.approvals || []).slice(); if (!aps.length || this.bulkBusy) return;
+    UI.confirm(`Approve all ${aps.length}?`, `Every item waiting here gets approved: emails go out on the next run (20 a day max), mockups get published and agent changes take effect.`, `Approve ${aps.length}`, async () => {
+      this.bulkBusy = true; App.render();
+      let ok = 0; const failed = [];
+      for (const a of aps) { try { await this.call('decide', { id: a.id, decision: 'approved', feedback: '' }); ok++; } catch (e) { failed.push(a.id); } }
+      this.bulkBusy = false;
+      UI.toast(`${I(failed.length ? 'info' : 'check', 16)} Approved ${ok}${failed.length ? ` · ${failed.length} failed (#${failed.join(', #')})` : ''}`, failed.length ? 'warn' : 'success');
+      this.load('overview');
+    }, false);
   },
   feedback(id, decision) {
     UI.modal({ title: decision === 'revise' ? 'What should change?' : 'Why reject it?', small: true,
